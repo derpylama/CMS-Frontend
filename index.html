@@ -11,10 +11,36 @@
       http-equiv="X-Content-Security-Policy"
       content="default-src 'self'; script-src 'self'"
     />
+
+    <link rel="stylesheet" href="index.css">
     <title>Hello from Electron renderer!</title>
   </head>
   <body>
     <h1>Hello from Electron renderer!</h1>
+    <div class="button_vertical_container">
+      <button id="button_1" type="button">button 1</button>
+      <button id="button_2" type="button">button 2</button>
+
+    </div>
+    <div class="text_area_container">
+      <textarea id="input_area_1" rows="10", cols="40" spellcheck="false">
+        Banana
+      </textarea>
+    </div>
+    <div>
+      <ul id="get_list_pages">
+        <li>
+          <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+          <select>
+            <option>eng</option>
+            <option>swe</option>
+          </select>
+        </li>
+        <li></li>
+      </ul>
+    </div>
+
+
     <p>👋</p>
   </body>
 </html>
