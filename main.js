@@ -1,4 +1,5 @@
 const { app, BrowserWindow } = require('electron')
+const ApiHandler = require("./apihandler")
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -11,4 +12,6 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   createWindow()
+  var api = new ApiHandler
+  api.GetPage(1)
 })
