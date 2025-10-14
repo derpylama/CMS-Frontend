@@ -200,7 +200,7 @@ class WonkyCMSApiWrapper {
     }
 
     // MARK: The only allowed html we currently know is: <div>, <h3>, <p>, <img>
-    HTMLToJson(html) { // Takes HTML and returns {"pageKey": "header", ...data...}
+    HTMLToJson(html) { // Takes HTML and returns {"header": "<header>", ...data...}
         // Generate JSON from HTML
 
         // Inject "useStandardMeasurement" set to true
@@ -209,11 +209,11 @@ class WonkyCMSApiWrapper {
 
     // === GENERAL ACTIONS ===
 
-    FetchAllPages() {} // Returns {"page1": "<header>", "page2": "<header>", ...}
+    FetchAllPages() {} // Returns {"<pageKey>": {"header": "<header>", ...data...}, ...}
 
     RemovePage(pageKey) {}
 
-    CreatePage(html) {} // Returns new pageKey
+    CreatePage(html) {} // Returns new pageKey (to get new pageKey find matching header in FetchAllPages response)
 
     ReplacePage(pageKey, html) {}
 }
