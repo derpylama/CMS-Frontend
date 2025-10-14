@@ -5,10 +5,10 @@ A beautiful description
 
 ## Project Structure
 
-*here we can layout what folders do what and what files do what just so we all are aware.
+*here we can layout what folders do what and what files do what just so we all are aware.*
 
 
 
 ## Code Best Practices
 
-*here we define what casing and naming scheme we hav in code*
+*here we define what casing and naming scheme we have in code*
