@@ -37,3 +37,15 @@ A beautiful description
     8. VALUE
 - CSS place colors and reusable styles in `:root` then use `var(--)` throughout the file.
 - CSS responsive, use `rem` or `em` units.
+
+
+## Features
+- Add a page with CSS styling HTML content and options (dropdowns for options and toggle-button for language)
+- Se all pages on the CMS (previews?)
+- Edit a page all the fields above (this GETS the page then on save DELETE old and UPLOAD new)
+- Remove a page
+
+Later
+- Inject a compatible tag that is hidden in our app with more meta data (ex. owner)
+- Possibly abstract a more complex storage model into the API layout.
+- A more visual editor
