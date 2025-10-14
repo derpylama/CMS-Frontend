@@ -1,3 +1,5 @@
+const https = require("https")
+
 
 class WonkyCMSApiWrapper {
     constructor(baseUrl = "https://elias.ntigskovde.se/") {
@@ -209,7 +211,30 @@ class WonkyCMSApiWrapper {
 
     // === GENERAL ACTIONS ===
 
-    FetchAllPages() {} // Returns {"<pageKey>": {"header": "<header>", ...data...}, ...}
+    FetchAllPages() {
+        https.get("https://elias.ntigskovde.se", (res) => {
+            let data = '';
+    
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+          
+            res.on('end', () => {
+              try {
+                var pages = data.split("pages =")[1]
+                var pagesJson = pages.split("</script>")[0]
+                var lastSemicolonIndex = pagesJson.trim()
+                var json = lastSemicolonIndex.substring(0, lastSemicolonIndex.length -1)
+    
+    
+              } catch (e) {
+                console.error('JSON parse error:', e);
+              }
+            });
+          }).on('error', (err) => {
+            console.error('Request error:', err);
+        })
+    } // Returns {"<pageKey>": {"header": "<header>", ...data...}, ...}
 
     RemovePage(pageKey) {}
 
