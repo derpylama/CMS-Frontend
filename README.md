@@ -6,6 +6,12 @@ A beautiful description
 ## Project Structure
 - `/.dev` contains dev tests and stuff we dont care about
     - `/.dev/reversing` contains stuff in the work of reverse engineering elias.ntigskovde.se
+- `/app` contains the app
+    - `/app/css` contains all css
+    - `/app/js` contains all frontend js 
+- `/boilerplate` contains the setup code for electron
+    - `main.js` entrypoint
+    - `preload.js` ??
 
 ## Code Formatting
 - `Classes` are `PascalCase`
