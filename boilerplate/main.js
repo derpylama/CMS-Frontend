@@ -1,5 +1,5 @@
 const { app, BrowserWindow } = require('electron')
-const ApiHandler = require("../app/js/apihandler")
+const ApiHandler = require("app/js/apihandler")
 
 const createWindow = () => {
     const win = new BrowserWindow({
