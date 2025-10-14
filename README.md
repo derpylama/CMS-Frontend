@@ -12,3 +12,6 @@ A beautiful description
 ## Code Best Practices
 
 *here we define what casing and naming scheme we have in code*
+
+- `/.dev` contains dev tests and stuff we dont care about
+    - `/.dev/reversing` contains stuff in the work of reverse engineering elias.ntigskovde.se
