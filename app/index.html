@@ -1,23 +1,147 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8" />
-        <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src 'self'; script-src 'self'"
-        />
-        <meta
-            http-equiv="X-Content-Security-Policy"
-            content="default-src 'self'; script-src 'self'"
-        />
-        <title>Hello from Electron renderer!</title>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'"
+    />
+    <meta
+      http-equiv="X-Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'"
+    />
 
-        <link rel="stylesheet" href="css/renderer.css"/>
-    </head>
-    <body>
-        <h1>Hello from Electron renderer!</h1>
-        <p>👋</p>
-        <script src="js/renderer.js"></script>
-    </body>
+    <link rel="stylesheet" href="index.css">
+    <title>Hello from Electron renderer!</title>
+  </head>
+  <body>
+    <h1>Hello from Electron renderer!</h1>
+    <div id="main_container">
+      <div class="side_container">
+          <ul>
+            <li>
+              <a href="https://elias.ntigskovde.se/"><span>BeeStad</span></a>
+              <select>
+                <option>eng</option>
+                <option>swe</option>
+              </select>
+            </li>
+            <li>
+              <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+              <select>
+                <option>eng</option>
+                <option>swe</option>
+              </select>
+            </li>
+            <li>
+
+              <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+              <select>
+                <option>eng</option>
+                <option>swe</option>
+              </select>
+            </li>
+            <li>
+              <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+              <select>
+                <option>eng</option>
+                <option>swe</option>
+              </select>
+            </li>
+            <li>
+              <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+              <select>
+                <option>eng</option>
+                <option>swe</option>
+              </select>
+            </li>
+          </ul>
+      </div>
+      <div class="content_container">
+        <h2>Main Container</h2>
+        <div class="edit_container">
+          <!-- Nuvarande tillagda inputs för editing.
+          button_small_[x], select_unit_[x], input_area_[x]-->
+          <div>
+            <div>
+              <button id="button_small_1" class="button_select">View</button>
+              <button id="button_small_2" class="button_select">Select</button>
+              <button id="button_small_3" class="button_select">Delete</button>
+              <button id="button_small_4" class="button_select">Get</button>
+              
+            </div>
+            <div class="input_container">
+              
+              <label class="label_header">Header:</label>
+              <input type="text" placeholder="Koalor" id="input_header" class="input_field">
+
+              <div>
+                <label>Standard unit for width:</label>
+                <select id="select_unit_1" class="unit_select">
+                  <option value="px">px</option>
+                  <option value="rem">rem</option>
+                  <option value="%">%</option>
+                  <option value="em">em</option>
+                </select>
+              </div>
+              <div>
+                <label>Standard unit for height:</label>
+                <select id="select_unit_2" class="unit_select">
+                  <option value="px">px</option>
+                  <option value="rem">rem</option>
+                  <option value="%">%</option>
+                  <option value="em">em</option>
+                </select>
+              </div>
+              <div>
+                <label>Standard unit for margin:</label>
+                <select id="select_unit_3" class="unit_select">
+                  <option value="px">px</option>
+                  <option value="rem">rem</option>
+                  <option value="%">%</option>
+                  <option value="em">em</option>
+                </select>
+              </div>
+              <div>
+                <label>Standard unit for padding:</label>
+                <select id="select_unit_4" class="unit_select">
+                  <option value="px">px</option>
+                  <option value="rem">rem</option>
+                  <option value="%">%</option>
+                  <option value="em">em</option>
+                </select>
+              </div>
+
+
+
+
+              
+
+
+
+            </div>
+            <div>
+              <button id="button_update" class="button large_button">&#x2328;Update</button>
+            </div>
+          </div>
+          <div class="text_edit_container">
+            <div class="text_area_container">
+              <label>HTML:</label>
+              <textarea id="input_area_1" rows="20", cols="60" spellcheck="false"></textarea>
+            </div>
+            <div class="text_area_container">
+              <label>CSS:</label>
+              <textarea id="input_area_2" rows="20", cols="60" spellcheck="false"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+
+
+
+    <p>👋</p>
+  </body>
 </html>
