@@ -1,4 +1,4 @@
-// MARK: If we move out HTML->JSON JSON->HTML to frontend we must refactor this file too
+// MARK: If we move out HTML->JSON JSON->HTML to frontend this file should move to
 
 const { WonkyCMSApiHandler } = require('./api.js');
 
@@ -88,6 +88,7 @@ ESES Extension
                 ...
             ]
         }
+        //MARK: ^^ Above does not work, nonrepresented must have a parent hiarchy key or simialr to know where they are from? and it must handle when its child or either representable or not 
 
       But fields ´element`, `attributes`, `styles` and `content` are omitted if they are not relevant to that element.
 
