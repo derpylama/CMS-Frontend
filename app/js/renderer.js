@@ -145,9 +145,19 @@ class WonkyCMSApiWrapper {
     }
   
     _getCSSValue(style, prop) {
-        const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`);
-        const match = style.match(regex);
-        return match ? match[1].trim() : null;
+        if (!style) return null;
+        const parts = String(style).split(';');
+        for (let i = 0; i < parts.length; i++) {
+            const seg = parts[i];
+            const idx = seg.indexOf(':');
+            if (idx === -1) continue;
+            const key = seg.slice(0, idx).trim();
+            if (key === prop) {
+                const val = seg.slice(idx + 1).trim();
+                return val || null;
+            }
+        }
+        return null;
     }
     
     _buildDivMap(json) {
@@ -284,9 +294,17 @@ class WonkyCMSApiWrapper {
             // --- Find nested divs ---
             const nestedDivPrefixes = new Set();
             for (const key in page) {
-                const match = key.match(new RegExp('^(' + divPrefix + 'div\\d+)'));
-                if (match) {
-                    nestedDivPrefixes.add(match[1]);
+                const base = divPrefix + 'div';
+                if (key.startsWith(base)) {
+                    let j = base.length;
+                    while (j < key.length) {
+                        const c = key.charCodeAt(j);
+                        if (c < 48 || c > 57) break;
+                        j++;
+                    }
+                    if (j > base.length) {
+                        nestedDivPrefixes.add(key.slice(0, j));
+                    }
                 }
             }
         

@@ -93,7 +93,7 @@ class WonkyCMSApiWrapper {
     // === JSON FUNCTIONS ===
 
     // Does not return weburl but creation URL parameters as string
-    JsonToUrl(jsonobj) {
+    JsonToUrl(jsonobj, lang = "sv") {
         const parts = [];
 
         const encode = (val) => encodeURIComponent(String(val)).replace(/%20/g, "+");
@@ -101,6 +101,7 @@ class WonkyCMSApiWrapper {
         const encodeColor = (val) => encodeURIComponent(String(val));
 
         // === Base page info ===
+        // MARK: Use lang parameter?
         const header = jsonobj.header || "";
         parts.push(`pageHeader=${encode(header)}`);
         parts.push(`pageLang=${encode(jsonobj.mainPageLang || "sv")}`);
@@ -646,6 +647,16 @@ class WonkyCMSApiWrapper {
     async GetPage(pageKey) {
         const url = `${this.baseUrl}php/getinfo.php?action=getPageInfo&pageKey=${pageKey}`;
         return await this._getJson(url);
+    }
+
+    async GetPageAsHtml(pageKey, lang = "sv") { // Returns [header, html]
+        const json = await this.GetPage(pageKey);
+        if (!json) {
+            throw new Error("Page not found");
+        }
+        const header = json.header || "";
+        const html = this.JsonToHTML(json, lang);
+        return [header, html];
     }
 }
 
