@@ -464,3 +464,11 @@ class WonkyCMSApiWrapper {
         return newPageKey;
     }
 }
+
+
+// html = `<div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:column;"><div style="width:90%;height:220px;display:flex;background-color:#ffffff;flex-flow:column;"><h3 style="font-size:24px;color:#003300;">Mini Koala Info</h3><p style="font-size:16px;color:#000000;">Detta är en liten ruta med en rubrik, text och en bild om koalan.</p><img style="width:80%;height:150px;border-radius:10px;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image"></div></div>`;
+// const api = new WonkyCMSApiWrapper();
+// (async () => {
+//     const newPageKey = await api.CreatePage(html, "My Koala Page", "sv");
+//     console.log("New pageKey:", newPageKey);
+// })();
