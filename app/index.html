@@ -12,12 +12,22 @@
       content="default-src 'self'; script-src 'self'"
     />
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/general.css">
     <title>Hello from Electron renderer!</title>
   </head>
   <body>
-    <h1>Hello from Electron renderer!</h1>
+    <div class="topbar_container">
+      <a class="topbar_header">Smörig CMS</a>
+      <div class="topbar_button_container">
+        <button class="button button_topbar">Edit</button>
+        <button class="button button_topbar">View</button>
+        <button class="button button_topbar">Create Page</button> 
+      </div>
+     
+    </div>
     <div id="main_container">
+      <div id="edit_container">
       <div class="side_container">
           <ul>
             <li>
@@ -75,7 +85,7 @@
               
               <label class="label_header">Header:</label>
               <input type="text" placeholder="Koalor" id="input_header" class="input_field">
-
+              <!--
               <div>
                 <label>Standard unit for width:</label>
                 <select id="select_unit_1" class="unit_select">
@@ -84,58 +94,25 @@
                   <option value="%">%</option>
                   <option value="em">em</option>
                 </select>
-              </div>
-              <div>
-                <label>Standard unit for height:</label>
-                <select id="select_unit_2" class="unit_select">
-                  <option value="px">px</option>
-                  <option value="rem">rem</option>
-                  <option value="%">%</option>
-                  <option value="em">em</option>
-                </select>
-              </div>
-              <div>
-                <label>Standard unit for margin:</label>
-                <select id="select_unit_3" class="unit_select">
-                  <option value="px">px</option>
-                  <option value="rem">rem</option>
-                  <option value="%">%</option>
-                  <option value="em">em</option>
-                </select>
-              </div>
-              <div>
-                <label>Standard unit for padding:</label>
-                <select id="select_unit_4" class="unit_select">
-                  <option value="px">px</option>
-                  <option value="rem">rem</option>
-                  <option value="%">%</option>
-                  <option value="em">em</option>
-                </select>
-              </div>
-
-
-
-
-              
-
-
-
+              </div
+              -->
             </div>
             <div>
-              <button id="button_update" class="button large_button">&#x2328;Update</button>
+              <button id="button_update" class="button_test large_button">&#x2328;Update</button>
             </div>
           </div>
           <div class="text_edit_container">
             <div class="text_area_container">
               <label>HTML:</label>
-              <textarea id="input_area_1" rows="20", cols="60" spellcheck="false"></textarea>
+              <textarea id="input_html_textarea" rows="40", cols="60" spellcheck="false"></textarea>
             </div>
-            <div class="text_area_container">
-              <label>CSS:</label>
-              <textarea id="input_area_2" rows="20", cols="60" spellcheck="false"></textarea>
-            </div>
+
           </div>
         </div>
+      </div>
+      </div>
+      <div id="view_container">
+
       </div>
     </div>
     
