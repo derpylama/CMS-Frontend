@@ -119,7 +119,7 @@ ESES Extension
     4. Emulated - Elements who are not directly representable but can have their core properties represented as text for non ESES clients, ex `video` who can be represented as `[Video: <source>]` - Mapped to `p`
     5. NotRepresented - Elements that have no relevant representation outside of ESES, ex `script`, self closing elements or non-content elements are also in this category like `br`
 
-    Note! If an element mapped as headers or text contains other elements it will be represented as a container (div) this is a preprocess, so later the children will have a "parenttype" field in the ESES mapping data.
+    Note! If an element mapped as headers or text contains other elements it will be represented as a container (div) this is a preprocess, so later the children will have a "parenttype" field in the ESES mapping data. //MARK: Is this sufficient to ensure data can be roundtripped?
 
   To map between these we can make a list where each element type is mapped to one of the above categories, if emulated there is also the "emulate" value which is a function that takes the element and returns the string representation.
 
