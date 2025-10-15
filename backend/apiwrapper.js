@@ -1,6 +1,9 @@
-const http = require('http');
-const https = require('https');
-const { URL } = require('url');
+// MARK: Should we move out HTML->JSON JSON->HTML to frontend to utualize DOM? If so refactor to take JSON instead of HTML
+
+const nf = require('node-fetch');
+const fetch = nf.default || nf;
+
+const fs = require('fs');
 
 class WonkyCMSApiWrapper {
     constructor(baseUrl = "https://elias.ntigskovde.se/") {
@@ -10,79 +13,39 @@ class WonkyCMSApiWrapper {
 		this.defaultTimeoutMs = 10000; // 10 seconds
     }
 
-    // === Low-level HTTP helpers (Node/Electron backend, no fetch/DOM) ===
-    _httpRequest(method, urlString, { headers = {}, body = null, timeoutMs = this.defaultTimeoutMs } = {}) {
-        return new Promise((resolve, reject) => {
-            let urlObj;
-            try {
-                urlObj = new URL(urlString);
-            } catch (err) {
-                return reject(new Error(`Invalid URL: ${urlString}`));
+    async _getText(url, timeoutMs) {
+        // const res = await this._httpRequest('GET', url, { timeoutMs });
+        // if (res.statusCode < 200 || res.statusCode >= 300) {
+        //     throw new Error(`HTTP ${res.statusCode} when GET ${url}`);
+        // }
+        //return res.text;
+        // Use node-fetch instead
+        return await fetch(url, { method: 'GET', timeout: timeoutMs || this.defaultTimeoutMs })
+        .then(res => {
+            // Set res charset to utf8
+            res.headers.set('charset', 'utf-8');
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status} when GET ${url}`);
             }
-
-            const isHttps = urlObj.protocol === 'https:';
-            const client = isHttps ? https : http;
-            const options = {
-                method,
-                hostname: urlObj.hostname,
-                port: urlObj.port || (isHttps ? 443 : 80),
-                path: urlObj.pathname + (urlObj.search || ''),
-                headers,
-            };
-
-            const req = client.request(options, (res) => {
-                const chunks = [];
-                res.on('data', (d) => chunks.push(d));
-                res.on('end', () => {
-                    const buffer = Buffer.concat(chunks);
-
-                    // const contentType = res.headers['content-type'] || '';
-                    // const match = contentType.match(/charset=([^;]+)/i);
-                    // const charset = match ? match[1].trim().toLowerCase() : null;
-
-                    // let text;
-                    // // If the server explicitly says UTF-8, decode as UTF-8
-                    // // Otherwise, assume Latin-1 (ISO-8859-1) and re-encode to UTF-8
-                    // if (charset && (charset.includes('utf-8') || charset.includes('utf8'))) {
-                    //     text = buffer.toString('utf8');
-                    // } else {
-                    //     // decode as latin1, then convert to UTF-8 string
-                    //     // Node's 'latin1' maps bytes 0–255 directly to Unicode U+0000–U+00FF
-                    //     text = Buffer.from(buffer.toString('latin1'), 'utf8').toString();
-                    // }
-
-                    const text = buffer.toString('utf8');
-
-                    resolve({ statusCode: res.statusCode || 0, headers: res.headers, text });
-                });
-            });
-
-            req.on('error', (err) => reject(err));
-            req.setTimeout(timeoutMs, () => {
-                req.destroy(new Error('Request timed out'));
-            });
-
-            if (body) {
-                if (typeof body === 'string' || Buffer.isBuffer(body)) {
-                    req.write(body);
-                } else {
-                    return reject(new Error('Body must be string or Buffer'));
-                }
-            }
-            req.end();
+            return res.text();
+        })
+        .catch(err => {
+            throw new Error(`Fetch error: ${err.message}`);
         });
     }
 
-    async _getText(url, timeoutMs) {
-        const res = await this._httpRequest('GET', url, { timeoutMs });
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-            throw new Error(`HTTP ${res.statusCode} when GET ${url}`);
-        }
-        return res.text;
-    }
-
     async _getJson(url, timeoutMs) {
+        // const text = await this._getText(url, timeoutMs);
+        // try {
+        //     return JSON.parse(text);
+        // } catch (e) {
+        //     throw new Error('Failed to parse JSON response');
+        // }
+
         const text = await this._getText(url, timeoutMs);
+
+        fs.writeFileSync('debug.txt', text, 'utf-8');
+
         try {
             return JSON.parse(text);
         } catch (e) {
@@ -91,18 +54,40 @@ class WonkyCMSApiWrapper {
     }
 
     async _postForm(url, formObj, timeoutMs) {
-        const body = Object.entries(formObj)
-            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-            .join('&');
-        const headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': Buffer.byteLength(body)
-        };
-        const res = await this._httpRequest('POST', url, { headers, body, timeoutMs });
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-            throw new Error(`HTTP ${res.statusCode} when POST ${url}`);
+        // const body = Object.entries(formObj)
+        //     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+        //     .join('&');
+        // const headers = {
+        //     'Content-Type': 'application/x-www-form-urlencoded',
+        //     'Content-Length': Buffer.byteLength(body)
+        // };
+        // const res = await this._httpRequest('POST', url, { headers, body, timeoutMs });
+        // if (res.statusCode < 200 || res.statusCode >= 300) {
+        //     throw new Error(`HTTP ${res.statusCode} when POST ${url}`);
+        // }
+        // return res.text;
+
+        // Use node-fetch bellow
+
+        const body = new URLSearchParams();
+        for (const [k, v] of Object.entries(formObj)) {
+            body.append(k, String(v));
         }
-        return res.text;
+        return await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+            timeout: timeoutMs || this.defaultTimeoutMs
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status} when POST ${url}`);
+            }
+            return res.text();
+        })
+        .catch(err => {
+            throw new Error(`Fetch error: ${err.message}`);
+        });
     }
 
     // === JSON FUNCTIONS ===
@@ -112,6 +97,7 @@ class WonkyCMSApiWrapper {
         const parts = [];
 
         const encode = (val) => encodeURIComponent(String(val)).replace(/%20/g, "+");
+        // %20 is space, + is space in x-www-form-urlencoded
         const encodeColor = (val) => encodeURIComponent(String(val));
 
         // === Base page info ===
@@ -190,7 +176,7 @@ class WonkyCMSApiWrapper {
         return `${parts.join("&")}`;
     }
   
-    _extractTexts(jsonobj, prefixToDivName) {
+    _extractTexts(jsonobj, prefixToDivName, lang = "sv") {
         const headers = [];
         const divHeaders = [];
         const texts = [];
@@ -200,20 +186,18 @@ class WonkyCMSApiWrapper {
         const headerColors = [];
         const textColors = [];
     
-        const headerRegex = /(textInfoRubrik\d+_sv)$/;
+        // Create dynamic regex based on lang
+        const headerRegex = new RegExp(`(textInfoRubrik\\d+_${lang})$`);
+        const textRegex = new RegExp(`(textInfo\\d+_${lang})$`);
+    
         for (const key in jsonobj) {
             if (headerRegex.test(key)) {
                 headers.push(jsonobj[key]);
-                const prefix = key.replace(/textInfoRubrik\d+_sv$/, "");
+                const prefix = key.replace(new RegExp(`textInfoRubrik\\d+_${lang}$`), "");
                 divHeaders.push(prefixToDivName[prefix] || "div1");
-            }
-        }
-    
-        const textRegex = /(textInfo\d+_sv)$/;
-        for (const key in jsonobj) {
-            if (textRegex.test(key)) {
+            } else if (textRegex.test(key)) {
                 texts.push(jsonobj[key]);
-                const prefix = key.replace(/textInfo\d+_sv$/, "");
+                const prefix = key.replace(new RegExp(`textInfo\\d+_${lang}$`), "");
                 textDivs.push(prefixToDivName[prefix] || "div1");
             }
         }
@@ -239,7 +223,7 @@ class WonkyCMSApiWrapper {
     }
   
     _getCSSValue(style, prop) {
-        const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`);
+        const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`); // \s means whitespace, * means zero or more, [^;]+ means one or more characters that are not semicolon
         const match = style.match(regex);
         return match ? match[1].trim() : null;
     }
@@ -255,7 +239,7 @@ class WonkyCMSApiWrapper {
 
         // Order by depth (shorter first), then lexicographically
         const orderedPrefixes = Array.from(prefixes).sort((a, b) => {
-            const depthA = (a.match(/div\d+/g) || []).length;
+            const depthA = (a.match(/div\d+/g) || []).length; // \d means digit, + means one or more, g means global (all occurrences)
             const depthB = (b.match(/div\d+/g) || []).length;
             if (depthA !== depthB) return depthA - depthB;
             return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
@@ -268,7 +252,7 @@ class WonkyCMSApiWrapper {
             prefixToDivName[prefix] = divName;
 
             // Determine parent by removing the last 'divN' segment
-            const parentPrefix = prefix.replace(/div\d+$/, "");
+            const parentPrefix = prefix.replace(/div\d+$/, ""); // $ means end of string
             if (parentPrefix && prefixToDivName[parentPrefix]) {
                 prefixToParentDivName[prefix] = prefixToDivName[parentPrefix];
             } else {
@@ -282,7 +266,7 @@ class WonkyCMSApiWrapper {
     _extractImages(jsonobj, prefixToDivName) {
         const images = [];
         for (const key in jsonobj) {
-            const m = key.match(/^(div[\ddiv]+)image(\d+)$/);
+            const m = key.match(/^(div[\ddiv]+)image(\d+)$/); // \d means digit, + means one or more, [] means character class, ^ means start of string, $ means end of string
             if (m) {
                 const prefix = m[1];
                 const idx = m[2];
@@ -334,53 +318,116 @@ class WonkyCMSApiWrapper {
     // === HTML FUNCTIONS ===
 
     JsonToHTML(json, lang = "sv") { // Takes {"pageKey": "header", ...data...} and returns HTML string (no DOM)
-        function addDiv(page, divPrefix, pageNumber, indentLevel = 0) {
+        // function addDiv(page, divPrefix, pageNumber, indentLevel = 0) {
+        //     let html = '';
+        //     const indent = '  '.repeat(indentLevel); // 2 spaces per indent
+        
+        //     // Get and clean style for the current div
+        //     let blockStyle = page['Style' + divPrefix] || '';
+        //     blockStyle = blockStyle.replace(/\b[\w-]+:\s*;/g, '').trim();
+        
+        //     html += `${indent}<div style="${blockStyle}">\n`;
+        
+        //     // --- Add text and images ---
+        //     for (const key in page) {
+        //         if (key.startsWith(divPrefix + 'textInfoRubrik') && key.endsWith('_' + lang)) {
+        //             const styleKey = 'Style' + key.replace(divPrefix, '').replace('_' + lang, '');
+        //             let style = (page[styleKey] || '').replace(/\b[\w-]+:\s*;/g, '').trim();
+        //             const value = page[key];
+        //             html += `${indent}  <h3 style="${style}">${value}</h3>\n`;
+        //         }
+        //         else if (key.startsWith(divPrefix + 'textInfo') && key.endsWith('_' + lang) && !key.startsWith(divPrefix + 'textInfoRubrik')) {
+        //             const styleKey = 'Style' + key.replace(divPrefix, '').replace('_' + lang, '');
+        //             let style = (page[styleKey] || '').replace(/\b[\w-]+:\s*;/g, '').trim();
+        //             const value = page[key];
+        //             html += `${indent}  <p style="${style}">${value}</p>\n`;
+        //         }
+        //         else if (key.startsWith(divPrefix + 'image')) {
+        //             const styleKey = 'Style' + key.replace(divPrefix, '');
+        //             let style = (page[styleKey] || '').replace(/\b[\w-]+:\s*;/g, '').trim();
+        //             html += `${indent}  <img style="${style}" src="${page[key]}" alt="Image">\n`;
+        //         }
+        //     }
+        
+        //     // --- Find nested divs ---
+        //     const nestedDivPrefixes = new Set();
+        //     for (const key in page) {
+        //         const match = key.match(new RegExp('^(' + divPrefix + 'div\\d+)'));
+        //         if (match) {
+        //             nestedDivPrefixes.add(match[1]);
+        //         }
+        //     }
+        
+        //     // --- Recursively add nested divs ---
+        //     nestedDivPrefixes.forEach(nestedDivPrefix => {
+        //         html += addDiv(page, nestedDivPrefix, pageNumber, indentLevel + 1);
+        //     });
+        
+        //     html += `${indent}</div>\n`;
+        //     return html;
+        // }
+
+        function addDiv(page, divPrefix, pageNumber, lang = "sv", indentLevel = 0) {
             let html = '';
-            const indent = '  '.repeat(indentLevel); // 2 spaces per indent
+            const indent = '  '.repeat(indentLevel); // Indentation for readability in nested divs
         
-            // Get and clean style for the current div
+            // Get and clean style for this div
             let blockStyle = page['Style' + divPrefix] || '';
-            blockStyle = blockStyle.replace(/\b[\w-]+:\s*;/g, '').trim();
+            
+            blockStyle = blockStyle.replace(/\b[\w-]+:\s*;/g, '').trim(); // Remove any empty CSS properties like "color:;" from the style string  /  Remove empty/invalid CSS properties
+            // \b means word boundary, [\w-]+ means one or more word characters or hyphens, :\s*; means a colon followed by optional whitespace and a semicolon, /g means global (all occurrences)
         
-            html += `${indent}<div style="${blockStyle}">\n`;
+            // Only add style attribute if it’s not empty
+            const divStyleAttr = blockStyle ? ` style="${blockStyle}"` : '';
+            html += `${indent}<div${divStyleAttr}>\n`; // Start div tag with styles if present
         
             // --- Add text and images ---
             for (const key in page) {
+                // H3 tag (header)
                 if (key.startsWith(divPrefix + 'textInfoRubrik') && key.endsWith('_' + lang)) {
+                    // Compute the corresponding style key for this header
                     const styleKey = 'Style' + key.replace(divPrefix, '').replace('_' + lang, '');
                     let style = (page[styleKey] || '').replace(/\b[\w-]+:\s*;/g, '').trim();
-                    const value = page[key];
-                    html += `${indent}  <h3 style="${style}">${value}</h3>\n`;
+                    // \b means word boundary, [\w-]+ means one or more word characters or hyphens, :\s*; means a colon followed by optional whitespace and a semicolon, /g means global (all occurrences)
+                    const styleAttr = style ? ` style="${style}"` : '';
+                    html += `${indent}  <h3${styleAttr}>${page[key]}</h3>\n`; // Add h3 element
                 }
-                else if (key.startsWith(divPrefix + 'textInfo') && key.endsWith('_' + lang) && !key.startsWith(divPrefix + 'textInfoRubrik')) {
+                // Paragraph
+                else if (key.startsWith(divPrefix + 'textInfo') && key.endsWith('_' + lang) && !key.includes('Rubrik')) {
+                    // Compute corresponding style key for paragraph
                     const styleKey = 'Style' + key.replace(divPrefix, '').replace('_' + lang, '');
                     let style = (page[styleKey] || '').replace(/\b[\w-]+:\s*;/g, '').trim();
-                    const value = page[key];
-                    html += `${indent}  <p style="${style}">${value}</p>\n`;
+                    // \b means word boundary, [\w-]+ means one or more word characters or hyphens, :\s*; means a colon followed by optional whitespace and a semicolon, /g means global (all occurrences)
+                    const styleAttr = style ? ` style="${style}"` : '';
+                    html += `${indent}  <p${styleAttr}>${page[key]}</p>\n`; // Add paragraph element
                 }
+                // Image
                 else if (key.startsWith(divPrefix + 'image')) {
+                    // Compute corresponding style key for image
                     const styleKey = 'Style' + key.replace(divPrefix, '');
                     let style = (page[styleKey] || '').replace(/\b[\w-]+:\s*;/g, '').trim();
-                    html += `${indent}  <img style="${style}" src="${page[key]}" alt="Image">\n`;
+                    // \b means word boundary, [\w-]+ means one or more word characters or hyphens, :\s*; means a colon followed by optional whitespace and a semicolon, /g means global (all occurrences)
+                    const styleAttr = style ? ` style="${style}"` : '';
+                    html += `${indent}  <img${styleAttr} src="${page[key]}" alt="Image">\n`; // Add img element
                 }
             }
         
-            // --- Find nested divs ---
+            // --- Detect nested divs within this div ---
             const nestedDivPrefixes = new Set();
             for (const key in page) {
+                // Match keys that represent nested divs, e.g., div1div1, div1div2, etc.
                 const match = key.match(new RegExp('^(' + divPrefix + 'div\\d+)'));
-                if (match) {
-                    nestedDivPrefixes.add(match[1]);
-                }
+                // ^ means start of string, ( means start capture group,  divPrefix is the current div prefix, div\\d+ means "div" followed by one or more digits, ) means end capture group
+                if (match) nestedDivPrefixes.add(match[1]);
             }
         
-            // --- Recursively add nested divs ---
+            // --- Recursively process each nested div ---
             nestedDivPrefixes.forEach(nestedDivPrefix => {
-                html += addDiv(page, nestedDivPrefix, pageNumber, indentLevel + 1);
+                html += addDiv(page, nestedDivPrefix, pageNumber, lang, indentLevel + 1);
             });
         
-            html += `${indent}</div>\n`;
-            return html;
+            html += `${indent}</div>\n`; // Close current div
+            return html; // Return HTML string for this div and its children
         }
 
         // divPrefix is where in the wonky-hierarchy we start building (div1 is root body)
@@ -417,10 +464,12 @@ class WonkyCMSApiWrapper {
 
 		function extractAttr(attrs, name) {
 			const m = new RegExp(name + '\\s*=\\s*"([^"]*)"', 'i').exec(attrs) || new RegExp(name + "\\s*=\\s*'([^']*)'", 'i').exec(attrs);
+                // \s means whitespace, * means zero or more, [^"]* means zero or more characters that are not double quotes, [^']* means zero or more characters that are not single quotes
 			return m ? m[1] : '';
 		}
 
 		const tagRegex = /<(\/)?(div|h3|p|img)([^>]*)>/gi;
+        // < means start of tag, (\/)? means optional / for closing tags, (div|h3|p|img) means tag name (div, h3, p, or img), ([^>]*) means zero or more characters that are not > (attributes), > means end of tag, /gi means global and case-insensitive
 		let lastIndex = 0;
 		let match;
 		while ((match = tagRegex.exec(html)) !== null) {
@@ -448,12 +497,14 @@ class WonkyCMSApiWrapper {
 					const prefix = stack[stack.length - 1] || 'div1';
 					const style = extractAttr(attrs, 'style');
 					const endTag = new RegExp(`</${tag}\\s*>`, 'i');
+                    // \s* means zero or more whitespace characters, </${tag} means the closing tag, > means end of tag, /i means case-insensitive
 					const endMatch = endTag.exec(html.substring(tagRegex.lastIndex));
 					let innerText = '';
 					if (endMatch) {
 						const start = tagRegex.lastIndex;
 						const end = start + endMatch.index;
 						innerText = html.substring(start, end).replace(/<[^>]*>/g, '').trim();
+                        // <[^>]*> means any tag, g means global (all occurrences)
 						// move regex index to after closing tag
 						tagRegex.lastIndex = end + endMatch[0].length;
 					}
@@ -466,12 +517,14 @@ class WonkyCMSApiWrapper {
 					const prefix = stack[stack.length - 1] || 'div1';
 					const style = extractAttr(attrs, 'style');
 					const endTag = new RegExp(`</${tag}\\s*>`, 'i');
+                    // \s* means zero or more whitespace characters, </${tag} means the closing tag, > means end of tag, /i means case-insensitive
 					const endMatch = endTag.exec(html.substring(tagRegex.lastIndex));
 					let innerText = '';
 					if (endMatch) {
 						const start = tagRegex.lastIndex;
 						const end = start + endMatch.index;
 						innerText = html.substring(start, end).replace(/<[^>]*>/g, '').trim();
+                        // <[^>]*> means any tag, g means global (all occurrences)
 						// move regex index to after closing tag
 						tagRegex.lastIndex = end + endMatch[0].length;
 					}
