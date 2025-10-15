@@ -2,7 +2,7 @@
   "name": "cms-frontend",
   "version": "0.0.1",
   "description": "A front end to a CMS api",
-  "main": "boilerplate/main.js",
+  "main": "backend/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron ."

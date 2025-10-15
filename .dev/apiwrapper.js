@@ -1,9 +1,92 @@
+const http = require('http');
+const https = require('https');
+const { URL } = require('url');
+
 class WonkyCMSApiWrapper {
-    constructor(baseUrl = "https://elias.ntigskovde.se/") {
-        this.indexUrl = baseUrl + "index.php";
-        this.fetchUrl = baseUrl + "php/getinfo.php";
-        this.baseUrl = baseUrl;
-    }
+	constructor(baseUrl = "https://elias.ntigskovde.se/") {
+		this.indexUrl = baseUrl + "index.php";
+		this.fetchUrl = baseUrl + "php/getinfo.php";
+		this.baseUrl = baseUrl;
+		this.defaultTimeoutMs = 10000;
+	}
+
+	// === Low-level HTTP helpers (Node/Electron backend, no fetch/DOM) ===
+	_httpRequest(method, urlString, { headers = {}, body = null, timeoutMs = this.defaultTimeoutMs } = {}) {
+		return new Promise((resolve, reject) => {
+			let urlObj;
+			try {
+				urlObj = new URL(urlString);
+			} catch (err) {
+				return reject(new Error(`Invalid URL: ${urlString}`));
+			}
+
+			const isHttps = urlObj.protocol === 'https:';
+			const client = isHttps ? https : http;
+			const options = {
+				method,
+				hostname: urlObj.hostname,
+				port: urlObj.port || (isHttps ? 443 : 80),
+				path: urlObj.pathname + (urlObj.search || ''),
+				headers,
+			};
+
+			const req = client.request(options, (res) => {
+				const chunks = [];
+				res.on('data', (d) => chunks.push(d));
+				res.on('end', () => {
+					const buffer = Buffer.concat(chunks);
+					const text = buffer.toString('utf8');
+					resolve({ statusCode: res.statusCode || 0, headers: res.headers, text });
+				});
+			});
+
+			req.on('error', (err) => reject(err));
+			req.setTimeout(timeoutMs, () => {
+				req.destroy(new Error('Request timed out'));
+			});
+
+			if (body) {
+				if (typeof body === 'string' || Buffer.isBuffer(body)) {
+					req.write(body);
+				} else {
+					return reject(new Error('Body must be string or Buffer'));
+				}
+			}
+			req.end();
+		});
+	}
+
+	async _getText(url, timeoutMs) {
+		const res = await this._httpRequest('GET', url, { timeoutMs });
+		if (res.statusCode < 200 || res.statusCode >= 300) {
+			throw new Error(`HTTP ${res.statusCode} when GET ${url}`);
+		}
+		return res.text;
+	}
+
+	async _getJson(url, timeoutMs) {
+		const text = await this._getText(url, timeoutMs);
+		try {
+			return JSON.parse(text);
+		} catch (e) {
+			throw new Error('Failed to parse JSON response');
+		}
+	}
+
+	async _postForm(url, formObj, timeoutMs) {
+		const body = Object.entries(formObj)
+			.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+			.join('&');
+		const headers = {
+			'Content-Type': 'application/x-www-form-urlencoded',
+			'Content-Length': Buffer.byteLength(body)
+		};
+		const res = await this._httpRequest('POST', url, { headers, body, timeoutMs });
+		if (res.statusCode < 200 || res.statusCode >= 300) {
+			throw new Error(`HTTP ${res.statusCode} when POST ${url}`);
+		}
+		return res.text;
+	}
 
     // === JSON FUNCTIONS ===
 
@@ -214,9 +297,9 @@ class WonkyCMSApiWrapper {
 
     // === Fetch / Post functions ===
 
-    async FetchJson(pageKey) {
-        return fetch(`${this.fetchUrl}?action=getPageInfo&pageKey=${pageKey}`)
-    }
+	async FetchJson(pageKey) {
+		return this._getJson(`${this.fetchUrl}?action=getPageInfo&pageKey=${encodeURIComponent(pageKey)}`);
+	}
 
     // Takes in a creation URL (not full weburl) and POSTs it to the CMS, returns nothing
     async PostCreationUrl(url) {
@@ -231,21 +314,12 @@ class WonkyCMSApiWrapper {
         </form>
         */
         // Where `rawData` = url
-        await fetch(this.indexUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `rawData=${encodeURIComponent(url)}`,
-        })
-        .catch(err => {
-            throw new Error('Request error:', err);
-        });
+        await this._postForm(this.indexUrl, { rawData: url }).catch(err => { throw err; });
     }
 
     // === HTML FUNCTIONS ===
 
-    JsonToHTML(json) { // Takes {"pageKey": "header", ...data...} and returns HTML string
+    JsonToHTML(json, lang = "sv") { // Takes {"pageKey": "header", ...data...} and returns HTML string (no DOM)
         function addDiv(page, divPrefix, pageNumber, indentLevel = 0) {
             let html = '';
             const indent = '  '.repeat(indentLevel); // 2 spaces per indent
@@ -255,10 +329,6 @@ class WonkyCMSApiWrapper {
             blockStyle = blockStyle.replace(/\b[\w-]+:\s*;/g, '').trim();
         
             html += `${indent}<div style="${blockStyle}">\n`;
-        
-            // Detect selected language (default = "sv")
-            const selectedLangInput = document.querySelector(`input[name="language-${pageNumber}"]:checked`);
-            const lang = selectedLangInput ? selectedLangInput.value : "sv";
         
             // --- Add text and images ---
             for (const key in page) {
@@ -305,7 +375,7 @@ class WonkyCMSApiWrapper {
     }
 
     // MARK: The only allowed html we currently know is: <div>, <h3>, <p>, <img>
-    HTMLToJson(html, header, mainPageLang = "sv", useStandardMeasurement = "false") { // Takes HTML and returns {"header": "<header>", ...data...}
+    HTMLToJson(html, header, mainPageLang = "sv", useStandardMeasurement = "false") { // Takes HTML and returns {"header": "<header>", ...data...} (no DOM)
         // Ensure header is defined else throw
         if (typeof header === 'undefined' || header === null || header.trim() === '') {
             throw new Error("Header is required");
@@ -317,26 +387,12 @@ class WonkyCMSApiWrapper {
 		result.mainPageLang = mainPageLang;
         result.header = header;
 
-		if (typeof document === 'undefined') {
-			// Environment does not support DOM; return minimal object
-			return result;
-		}
-
-		const container = document.createElement('div');
-		container.innerHTML = html || '';
-
-		const rootDiv = container.querySelector('div');
-		if (!rootDiv) return result;
-
 		let headerCount = 0;
 		let paragraphCount = 0;
 		let imageCount = 0;
 		const nestedDivCounters = new Map(); // per-prefix counters
-
-		function getStyle(el) {
-			const style = el.getAttribute('style');
-			return style ? style.trim() : '';
-		}
+		const stack = [];
+		let firstDivSeen = false;
 
 		function nextNestedIndex(prefix) {
 			const current = nestedDivCounters.get(prefix) || 0;
@@ -345,38 +401,89 @@ class WonkyCMSApiWrapper {
 			return next;
 		}
 
-		function processDiv(divEl, prefix) {
-			result['Style' + prefix] = getStyle(divEl);
-
-			for (const child of Array.from(divEl.children)) {
-				const tag = child.tagName.toLowerCase();
-				if (tag === 'h3') {
-					headerCount += 1;
-					const key = prefix + 'textInfoRubrik' + headerCount + '_sv';
-					const styleKey = 'StyletextInfoRubrik' + headerCount;
-					result[key] = child.textContent || '';
-					result[styleKey] = getStyle(child);
-				} else if (tag === 'p') {
-					paragraphCount += 1;
-					const key = prefix + 'textInfo' + paragraphCount + '_sv';
-					const styleKey = 'StyletextInfo' + paragraphCount;
-					result[key] = child.textContent || '';
-					result[styleKey] = getStyle(child);
-				} else if (tag === 'img') {
-					imageCount += 1;
-					const key = prefix + 'image' + imageCount;
-					const styleKey = 'Styleimage' + imageCount;
-					result[key] = child.getAttribute('src') || '';
-					result[styleKey] = getStyle(child);
-				} else if (tag === 'div') {
-					const n = nextNestedIndex(prefix);
-					const childPrefix = prefix + 'div' + n;
-					processDiv(child, childPrefix);
-				}
-			}
+		function extractAttr(attrs, name) {
+			const m = new RegExp(name + '\\s*=\\s*"([^"]*)"', 'i').exec(attrs) || new RegExp(name + "\\s*=\\s*'([^']*)'", 'i').exec(attrs);
+			return m ? m[1] : '';
 		}
 
-		processDiv(rootDiv, 'div1');
+		const tagRegex = /<(\/)?(div|h3|p|img)([^>]*)>/gi;
+		let lastIndex = 0;
+		let match;
+		while ((match = tagRegex.exec(html)) !== null) {
+			const [full, closingSlash, tag, attrs] = match;
+			const isClosing = Boolean(closingSlash);
+			const lowerTag = tag.toLowerCase();
+
+			if (!isClosing) {
+				if (lowerTag === 'div') {
+					let prefix;
+					if (!firstDivSeen) {
+						firstDivSeen = true;
+						prefix = 'div1';
+						stack.push(prefix);
+					} else {
+						const parent = stack[stack.length - 1] || 'div1';
+						const n = nextNestedIndex(parent);
+						prefix = parent + 'div' + n;
+						stack.push(prefix);
+					}
+					const style = extractAttr(attrs, 'style');
+					result['Style' + prefix] = (style || '').trim();
+				} else if (lowerTag === 'h3') {
+					headerCount += 1;
+					const prefix = stack[stack.length - 1] || 'div1';
+					const style = extractAttr(attrs, 'style');
+					const endTag = new RegExp(`</${tag}\\s*>`, 'i');
+					const endMatch = endTag.exec(html.substring(tagRegex.lastIndex));
+					let innerText = '';
+					if (endMatch) {
+						const start = tagRegex.lastIndex;
+						const end = start + endMatch.index;
+						innerText = html.substring(start, end).replace(/<[^>]*>/g, '').trim();
+						// move regex index to after closing tag
+						tagRegex.lastIndex = end + endMatch[0].length;
+					}
+					const key = prefix + 'textInfoRubrik' + headerCount + '_sv';
+					const styleKey = 'StyletextInfoRubrik' + headerCount;
+					result[key] = innerText;
+					result[styleKey] = (style || '').trim();
+				} else if (lowerTag === 'p') {
+					paragraphCount += 1;
+					const prefix = stack[stack.length - 1] || 'div1';
+					const style = extractAttr(attrs, 'style');
+					const endTag = new RegExp(`</${tag}\\s*>`, 'i');
+					const endMatch = endTag.exec(html.substring(tagRegex.lastIndex));
+					let innerText = '';
+					if (endMatch) {
+						const start = tagRegex.lastIndex;
+						const end = start + endMatch.index;
+						innerText = html.substring(start, end).replace(/<[^>]*>/g, '').trim();
+						// move regex index to after closing tag
+						tagRegex.lastIndex = end + endMatch[0].length;
+					}
+					const key = prefix + 'textInfo' + paragraphCount + '_sv';
+					const styleKey = 'StyletextInfo' + paragraphCount;
+					result[key] = innerText;
+					result[styleKey] = (style || '').trim();
+				} else if (lowerTag === 'img') {
+					imageCount += 1;
+					const prefix = stack[stack.length - 1] || 'div1';
+					const style = extractAttr(attrs, 'style');
+					const src = extractAttr(attrs, 'src');
+					const key = prefix + 'image' + imageCount;
+					const styleKey = 'Styleimage' + imageCount;
+					result[key] = src || '';
+					result[styleKey] = (style || '').trim();
+				}
+			} else {
+				// closing tag
+				if (lowerTag === 'div') {
+					stack.pop();
+				}
+			}
+			lastIndex = tagRegex.lastIndex;
+		}
+
 		return result;
     }
 
@@ -384,35 +491,26 @@ class WonkyCMSApiWrapper {
     // === GENERAL ACTIONS ===
 
     async FetchAllPages() {
-        result = {};
-        await fetch(this.baseUrl)
-            .then(response => response.text())
-            .then(data => {
-                try {
-                    const pages = data.split("pages =")[1];
-                    const pagesJson = pages.split("</script>")[0];
-                    const lastSemicolonIndex = pagesJson.trim();
-                    const json = lastSemicolonIndex.substring(0, lastSemicolonIndex.length - 1);
-                    result = JSON.parse(json);
-                } catch (e) {
-                    throw new Error('Failed to parse pages JSON');
-                }
-            })
-            .catch(err => {
-                throw new Error('Request error:', err);
-            });
-
-        return result;
+		let result = {};
+		const data = await this._getText(this.baseUrl).catch((err) => { throw err; });
+		try {
+			// Expect something like:  pages = {...};
+			const m = data.match(/pages\s*=\s*(\{[\s\S]*?\});/);
+			if (!m) throw new Error('pages JSON not found');
+			const jsonWithSemicolon = m[1];
+			const json = jsonWithSemicolon.replace(/;\s*$/, '');
+			result = JSON.parse(json);
+		} catch (e) {
+			throw new Error('Failed to parse pages JSON');
+		}
+		return result;
 
     } // Returns {"<pageKey>": {"header": "<header>", ...data...}, ...}
 
     async RemovePage(pageKey) {
         // GET elias.ntigskovde.se/php/deletepage.php?action=deletePage&pageKey=<string:pageID>
 
-        await fetch(`${this.baseUrl}php/deletepage.php?action=deletePage&pageKey=${pageKey}`)
-            .catch(err => {
-                throw new Error('Request error:', err);
-            });
+		await this._getText(`${this.baseUrl}php/deletepage.php?action=deletePage&pageKey=${encodeURIComponent(pageKey)}`).catch(err => { throw err; });
     }
 
     // Returns null if a matching header is not found (after creating a page)
@@ -465,11 +563,4 @@ class WonkyCMSApiWrapper {
     }
 }
 
-
-html = `<div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:column;"><div style="width:90%;height:220px;display:flex;background-color:#ffffff;flex-flow:column;"><h3 style="font-size:24px;color:#003300;">Mini Koala Info</h3><p style="font-size:16px;color:#000000;">Detta är en liten ruta med en rubrik, text och en bild om koalan.</p><img style="width:80%;height:150px;border-radius:10px;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image"></div></div>`;
-const api = new WonkyCMSApiWrapper("http://192.168.218.186:8080/cmsapi/");
-(async () => {
-    console.log("Testing CreatePage...");
-    const newPageKey = await api.CreatePage(html, "My Koala Page", "sv");
-    console.log("New pageKey:", newPageKey);
-})();
+module.exports = WonkyCMSApiWrapper;
