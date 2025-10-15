@@ -7,144 +7,241 @@ class WonkyCMSApiWrapper {
 
     // === JSON FUNCTIONS ===
 
+    // Does not return weburl but creation URL parameters as string
     JsonToUrl(json) {
-          let parts = [];
-      
-          // === Base page info ===
-          parts.push(`pageHeader=${json.header.replace(/\s+/g, "+")}+pt2`);
-          parts.push(`pageLang=${json.mainPageLang || "sv"}`);
-      
-          // === Standard Measurements ===
-          if (json.useStandardMeasurement === "true") {
-            parts.push(`standardUnitWidth=${json.standardUnitWidth}`);
-            parts.push(`standardUnitHeight=${json.standardUnitHeight}`);
-            parts.push(`standardMeasureUnitMargin=${json.standardMeasureUnitMargin}`);
-            parts.push(`standardMeasureUnitBorder=${json.standardMeasureUnitBorder}`);
-            parts.push(`standardMeasureUnitFont=${json.standardMeasureUnitFont}`);
-          }
-      
-          // === Divs ===
-          const divs = this._extractDivs(json);
-          for (const div of divs) {
-            parts.push(`addDivToDiv[]=${div.parent}`);
-            parts.push(`newDivWidth[]=${div.width}`);
-            parts.push(`newDivHeight[]=${div.height}`);
-            parts.push(`newDivDisplay[]=${div.display}`);
-            parts.push(`newDivColor[]=%23${div.color.replace("#", "")}`);
-            if (div.flow) parts.push(`newDivFlow[]=${div.flow}`);
-            if (div.justify) parts.push(`newDivJustify[]=${div.justify}`);
-            if (div.align) parts.push(`newDivAlign=${div.align}`);
-            if (div.paddingBot) parts.push(`newDivPaddingBot[]=${div.paddingBot}`);
-          }
-      
-          // === Text info ===
-          const texts = this._extractTexts(json);
-          for (const t of texts.headers) parts.push(`addTextInformationHeader[]=${t.replace(/\s+/g, "+")}`);
-          for (const t of texts.divHeaders) parts.push(`addTextInformationDivHeader[]=${t}`);
-          for (const t of texts.texts) parts.push(`addTextInformation[]=${t.replace(/\s+/g, "+")}`);
-          for (const t of texts.textDivs) parts.push(`addTextInformationDiv[]=${t}`);
-          for (const t of texts.headerSizes) parts.push(`addTextInformationHeaderSize[]=${t}`);
-          for (const t of texts.textSizes) parts.push(`addTextInformationSize[]=${t}`);
-          for (const t of texts.headerColors) parts.push(`addTextInformationHeaderColor[]=${t}`);
-          for (const t of texts.textColors) parts.push(`addTextInformationColor[]=${t}`);
-      
-          // === Images ===
-          if (json.images) {
-            for (const img of json.images) {
-              parts.push(`addImage[]=${img.src}`);
-              parts.push(`addImageDiv[]=${img.div}`);
-              parts.push(`addImageDisplay[]=${img.display}`);
-              parts.push(`addImageWidth[]=${img.width}`);
-              parts.push(`addImageHeight[]=${img.height}`);
-              if (img.borderRadius) parts.push(`addImageBorderRadius[]=${img.borderRadius}`);
-            }
-          }
-      
-          return `${this.baseUrl}?${parts.join("&")}`;
+        const parts = [];
+
+        const encode = (val) => encodeURIComponent(String(val)).replace(/%20/g, "+");
+        const encodeColor = (val) => encodeURIComponent(String(val));
+
+        // === Base page info ===
+        const header = json.header || "";
+        parts.push(`pageHeader=${encode(header)}`);
+        parts.push(`pageLang=${encode(json.mainPageLang || "sv")}`);
+
+        // === Standard Measurements flag must always be present ===
+        const useStd = String(json.useStandardMeasurement) === "true";
+        parts.push(`useStandardMeasurement=${useStd ? "true" : "false"}`);
+        if (useStd) {
+            if (json.standardUnitWidth) parts.push(`standardUnitWidth=${encode(json.standardUnitWidth)}`);
+            if (json.standardUnitHeight) parts.push(`standardUnitHeight=${encode(json.standardUnitHeight)}`);
+            if (json.standardMeasureUnitMargin) parts.push(`standardMeasureUnitMargin=${encode(json.standardMeasureUnitMargin)}`);
+            if (json.standardMeasureUnitBorder) parts.push(`standardMeasureUnitBorder=${encode(json.standardMeasureUnitBorder)}`);
+            if (json.standardMeasureUnitFont) parts.push(`standardMeasureUnitFont=${encode(json.standardMeasureUnitFont)}`);
         }
-      
-        _extractDivs(json) {
-          const divs = [];
-          for (const key in json) {
-            if (key.startsWith("Stylediv")) {
-              const css = json[key];
-              const width = this._getCSSValue(css, "width")?.replace("%", "") || "100";
-              const height = this._getCSSValue(css, "height")?.replace("px", "") || "100";
-              const display = this._getCSSValue(css, "display") || "flex";
-              const color = this._getCSSValue(css, "background-color") || "#ffffff";
-              const flow = this._getCSSValue(css, "flex-flow");
-              const justify = this._getCSSValue(css, "justify-content");
-              const align = this._getCSSValue(css, "align-items");
-              const paddingBot = this._getCSSValue(css, "padding-bottom")?.replace("px", "");
-      
-              let parent = "div1";
-              if (key.includes("div1div2div")) parent = "div3";
-              else if (key.includes("div1div2")) parent = "div2";
-              else if (key.includes("div1div1")) parent = "div2";
-      
-              divs.push({ parent, width, height, display, color, flow, justify, align, paddingBot });
+
+        // === Build div map (prefix -> divN) and parent links ===
+        const { orderedPrefixes, prefixToDivName, prefixToParentDivName } = this._buildDivMap(json);
+
+        // === Divs ===
+        for (let i = 0; i < orderedPrefixes.length; i++) {
+            const prefix = orderedPrefixes[i];
+            const styles = json[`Style${prefix}`] || "";
+
+            const width = this._getCSSValue(styles, "width");
+            const height = this._getCSSValue(styles, "height");
+            const display = this._getCSSValue(styles, "display");
+            const bgColor = this._getCSSValue(styles, "background-color");
+            const flow = this._getCSSValue(styles, "flex-flow");
+            const justify = this._getCSSValue(styles, "justify-content");
+            const align = this._getCSSValue(styles, "align-items");
+            const paddingBot = this._getCSSValue(styles, "padding-bottom");
+
+            // For the first div (root), do NOT add addDivToDiv[]
+            if (i > 0) {
+                const parentDivName = prefixToParentDivName[prefix];
+                parts.push(`addDivToDiv[]=${parentDivName}`);
             }
-          }
-          return divs;
+
+            if (width) parts.push(`newDivWidth[]=${encode(width)}`);
+            if (height) parts.push(`newDivHeight[]=${encode(height)}`);
+            if (display) parts.push(`newDivDisplay[]=${encode(display)}`);
+            if (bgColor) parts.push(`newDivColor[]=${encodeColor(bgColor)}`);
+            if (flow) parts.push(`newDivFlow[]=${encode(flow)}`);
+            if (justify) parts.push(`newDivJustify[]=${encode(justify)}`);
+            if (align) parts.push(`newDivAlign[]=${encode(align)}`);
+            if (paddingBot) parts.push(`newDivPaddingBot[]=${encode(paddingBot)}`);
         }
-      
-        _extractTexts(json) {
-          const headers = [];
-          const divHeaders = [];
-          const texts = [];
-          const textDivs = [];
-          const headerSizes = [];
-          const textSizes = [];
-          const headerColors = [];
-          const textColors = [];
-      
-          const headerRegex = /(textInfoRubrik\d+_sv)$/;
-          for (const key in json) {
+
+        // === Text info ===
+        const texts = this._extractTexts(json, prefixToDivName);
+        // Maintain the order similar to known-good
+        for (const t of texts.headers) parts.push(`addTextInformationHeader[]=${encode(t)}`);
+        for (const t of texts.headerSizes) parts.push(`addTextInformationHeaderSize[]=${encode(t)}`);
+        for (const t of texts.headerColors) parts.push(`addTextInformationHeaderColor[]=${encodeColor(t)}`);
+        for (const t of texts.divHeaders) parts.push(`addTextInformationDivHeader[]=${t}`);
+
+        for (const t of texts.texts) parts.push(`addTextInformation[]=${encode(t)}`);
+        for (const t of texts.textDivs) parts.push(`addTextInformationDiv[]=${t}`);
+        for (const t of texts.textSizes) parts.push(`addTextInformationSize[]=${encode(t)}`);
+        for (const t of texts.textColors) parts.push(`addTextInformationColor[]=${encodeColor(t)}`);
+
+        // === Images (extract from JSON keys + styles) ===
+        const images = this._extractImages(json, prefixToDivName);
+        for (const img of images) {
+            parts.push(`addImage[]=${encode(img.src)}`);
+            parts.push(`addImageDiv[]=${img.div}`);
+            if (img.display) parts.push(`addImageDisplay[]=${encode(img.display)}`);
+            if (img.width) parts.push(`addImageWidth[]=${encode(img.width)}`);
+            if (img.height) parts.push(`addImageHeight[]=${encode(img.height)}`);
+            if (img.borderRadius) parts.push(`addImageBorderRadius[]=${encode(img.borderRadius)}`);
+        }
+
+        return `${parts.join("&")}`;
+    }
+  
+    _extractDivs(json) {
+        // Deprecated by _buildDivMap + inline extraction in JsonToUrl
+        const divs = [];
+        return divs;
+    }
+  
+    _extractTexts(json, prefixToDivName) {
+        const headers = [];
+        const divHeaders = [];
+        const texts = [];
+        const textDivs = [];
+        const headerSizes = [];
+        const textSizes = [];
+        const headerColors = [];
+        const textColors = [];
+    
+        const headerRegex = /(textInfoRubrik\d+_sv)$/;
+        for (const key in json) {
             if (headerRegex.test(key)) {
-              headers.push(json[key]);
-              divHeaders.push(key.replace(/textInfoRubrik\d+_sv$/, ""));
+                headers.push(json[key]);
+                const prefix = key.replace(/textInfoRubrik\d+_sv$/, "");
+                divHeaders.push(prefixToDivName[prefix] || "div1");
             }
-          }
-      
-          const textRegex = /(textInfo\d+_sv)$/;
-          for (const key in json) {
+        }
+    
+        const textRegex = /(textInfo\d+_sv)$/;
+        for (const key in json) {
             if (textRegex.test(key)) {
-              texts.push(json[key]);
-              textDivs.push(key.replace(/textInfo\d+_sv$/, ""));
+                texts.push(json[key]);
+                const prefix = key.replace(/textInfo\d+_sv$/, "");
+                textDivs.push(prefixToDivName[prefix] || "div1");
             }
-          }
-      
-          // Pull style sizes/colors
-          Object.keys(json).forEach((k) => {
+        }
+    
+        // Pull style sizes/colors
+        Object.keys(json).forEach((k) => {
             if (k.startsWith("StyletextInfoRubrik")) {
-              const css = json[k];
-              const fs = this._getCSSValue(css, "font-size")?.replace("px", "");
-              const col = this._getCSSValue(css, "color");
-              if (fs) headerSizes.push(fs);
-              if (col) headerColors.push(col);
+                const css = json[k];
+                const fs = this._getCSSValue(css, "font-size");
+                const col = this._getCSSValue(css, "color");
+                if (fs) headerSizes.push(fs);
+                if (col) headerColors.push(col);
             } else if (k.startsWith("StyletextInfo")) {
-              const css = json[k];
-              const fs = this._getCSSValue(css, "font-size")?.replace("px", "");
-              const col = this._getCSSValue(css, "color");
-              if (fs) textSizes.push(fs);
-              if (col) textColors.push(col);
+                const css = json[k];
+                const fs = this._getCSSValue(css, "font-size");
+                const col = this._getCSSValue(css, "color");
+                if (fs) textSizes.push(fs);
+                if (col) textColors.push(col);
             }
-          });
-      
-          return { headers, divHeaders, texts, textDivs, headerSizes, textSizes, headerColors, textColors };
+        });
+    
+        return { headers, divHeaders, texts, textDivs, headerSizes, textSizes, headerColors, textColors };
+    }
+  
+    _getCSSValue(style, prop) {
+        const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`);
+        const match = style.match(regex);
+        return match ? match[1].trim() : null;
+    }
+    
+    _buildDivMap(json) {
+        const prefixes = new Set();
+        for (const key in json) {
+            if (key.startsWith("Stylediv")) {
+                const prefix = key.replace(/^Style/, "");
+                prefixes.add(prefix);
+            }
         }
-      
-        _getCSSValue(style, prop) {
-          const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`);
-          const match = style.match(regex);
-          return match ? match[1].trim() : null;
+
+        // Order by depth (shorter first), then lexicographically
+        const orderedPrefixes = Array.from(prefixes).sort((a, b) => {
+            const depthA = (a.match(/div\d+/g) || []).length;
+            const depthB = (b.match(/div\d+/g) || []).length;
+            if (depthA !== depthB) return depthA - depthB;
+            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+        });
+
+        const prefixToDivName = {};
+        const prefixToParentDivName = {};
+        orderedPrefixes.forEach((prefix, idx) => {
+            const divName = `div${idx + 1}`;
+            prefixToDivName[prefix] = divName;
+
+            // Determine parent by removing the last 'divN' segment
+            const parentPrefix = prefix.replace(/div\d+$/, "");
+            if (parentPrefix && prefixToDivName[parentPrefix]) {
+                prefixToParentDivName[prefix] = prefixToDivName[parentPrefix];
+            } else {
+                prefixToParentDivName[prefix] = null;
+            }
+        });
+
+        return { orderedPrefixes, prefixToDivName, prefixToParentDivName };
+    }
+
+    _extractImages(json, prefixToDivName) {
+        const images = [];
+        for (const key in json) {
+            const m = key.match(/^(div[\ddiv]+)image(\d+)$/);
+            if (m) {
+                const prefix = m[1];
+                const idx = m[2];
+                const src = json[key];
+                const style = json[`Styleimage${idx}`] || '';
+                const width = this._getCSSValue(style, 'width');
+                const height = this._getCSSValue(style, 'height');
+                const borderRadius = this._getCSSValue(style, 'border-radius');
+                const display = this._getCSSValue(style, 'display');
+                images.push({
+                    src,
+                    div: prefixToDivName[prefix] || 'div1',
+                    width,
+                    height,
+                    borderRadius,
+                    display
+                });
+            }
         }
-      
+        return images;
+    }
+
+
+    // === Fetch / Post functions ===
 
     async FetchJson(pageKey) {
         return fetch(`${this.fetchUrl}?action=getPageInfo&pageKey=${pageKey}`)
     }
 
+    // Takes in a creation URL (not full weburl) and POSTs it to the CMS, returns nothing
+    async PostCreationUrl(url) {
+        // To send a creation URL we send a POST request to baseUrl + "index.php"
+        // Replicating the bellow HTML form
+        /*
+        <form id="cretePageFromDataForm" method="post" action="">
+            <label>Enter POST-data or JSON-data:</label><br>
+                <textarea name="rawData" rows="10" cols="120" placeholder=""></textarea>
+            <br>
+            <button type="submit">Create new page</button>
+        </form>
+        */
+        // Where `rawData` = url
+        await fetch(this.indexUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `rawData=${encodeURIComponent(url)}`,
+        })
+        .catch(err => {
+            throw new Error('Request error:', err);
+        });
+    }
 
     // === HTML FUNCTIONS ===
 
@@ -208,12 +305,17 @@ class WonkyCMSApiWrapper {
     }
 
     // MARK: The only allowed html we currently know is: <div>, <h3>, <p>, <img>
-    HTMLToJson(html) { // Takes HTML and returns {"header": "<header>", ...data...}
+    HTMLToJson(html, header, mainPageLang = "sv", useStandardMeasurement = "false") { // Takes HTML and returns {"header": "<header>", ...data...}
+        // Ensure header is defined else throw
+        if (typeof header === 'undefined' || header === null || header.trim() === '') {
+            throw new Error("Header is required");
+        }
 		// Generate JSON from HTML
 		const result = {};
 		// Inject "useStandardMeasurement" set to true
-		result.useStandardMeasurement = "true";
-		result.mainPageLang = "sv";
+		result.useStandardMeasurement = useStandardMeasurement;
+		result.mainPageLang = mainPageLang;
+        result.header = header;
 
 		if (typeof document === 'undefined') {
 			// Environment does not support DOM; return minimal object
@@ -293,128 +395,72 @@ class WonkyCMSApiWrapper {
                     const json = lastSemicolonIndex.substring(0, lastSemicolonIndex.length - 1);
                     result = JSON.parse(json);
                 } catch (e) {
-                    console.error('JSON parse error:', e);
+                    throw new Error('Failed to parse pages JSON');
                 }
             })
             .catch(err => {
-                console.error('Request error:', err);
+                throw new Error('Request error:', err);
             });
 
         return result;
 
     } // Returns {"<pageKey>": {"header": "<header>", ...data...}, ...}
 
-    async RemovePage(pageKey) {}
+    async RemovePage(pageKey) {
+        // GET elias.ntigskovde.se/php/deletepage.php?action=deletePage&pageKey=<string:pageID>
 
-    async CreatePage(html) {} // Returns new pageKey (to get new pageKey find matching header in FetchAllPages response)
+        await fetch(`${this.baseUrl}php/deletepage.php?action=deletePage&pageKey=${pageKey}`)
+            .catch(err => {
+                throw new Error('Request error:', err);
+            });
+    }
 
-    async ReplacePage(pageKey, html) {}
-}
+    // Returns null if a matching header is not found (after creating a page)
+    async CreatePage(html, header, mainPageLang = "sv", useStandardMeasurement = "false") { // Returns new pageKey (to get new pageKey find matching header in FetchAllPages response)
+        if (typeof header === 'undefined' || header === null || header.trim() === '') {
+            throw new Error("Header is required");
+        }
+        
+        json = this.HTMLToJson(html, header, mainPageLang, useStandardMeasurement);
 
-// Test HTMLToJson
+        const url = this.JsonToUrl(json);
 
-HTML = `
-<div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
-    <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
-    <p style="font-size:18px;color:#003300;">Koalor är små tåliga trädlevande djur från Australien.</p>
-    <img style="width:100%;height:250px;height:250;border-radius:10;border-radius:10;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image">
-    <div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:row;">
-        <h3 style="font-size:28px;color:#006633;">Fakta om Koalor</h3>
-        <p style="font-size:16px;color:#666600;">De är kända för att äta eukalyptusblad.</p>
-        <p style="font-size:18px;color:#ff6600;">Koalor äter nästan uteslutande eukalyptusblad.</p>
-        <img style="width:80%;height:200px;height:200;border-radius:15;border-radius:15;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Koala_eating_eucalyptus_leaf.jpg" alt="Image">
-    </div>
-    <div style="width:80%;height:250px;display:flex;background-color:#ffe4b5;flex-flow:column;">
-        <h3 style="font-size:24px;color:green;">Roliga fakta</h3>
-        <p style="font-size:16px;color:#005500;">Koalor sover upp till 20 timmar per dag.</p>
-        <p style="font-size:14px;">Koalor har starka klor för att klättra i träd.</p>
-        <p style="">Koalor kommunicerar med olika ljud, från snarkningar till skrik.</p>
-        <p style="">test</p>
-        <img style="width:90%;height:180px;height:180;border-radius:20;border-radius:20;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/0/08/Koala_sleeping_in_tree.jpg" alt="Image"><img style="width:70%;height:140px;height:140;border-radius:25;border-radius:25;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/1/14/Koala_close_up.jpg" alt="Image">
-    </div>
-</div>
-`;
+        // POST url
+        await this.PostCreationUrl(url);
 
-const wrapper = new WonkyCMSApiWrapper();
-// const json = wrapper.HTMLToJson(HTML);
-// const url = wrapper.JsonToUrl(json);
+        // Find new pageKey by fetching all pages and finding matching header
+        const allPages = await this.FetchAllPages();
+        for (const key in allPages) {
+            if (allPages[key].header === header) {
+                return key;
+            }
+        }
 
-// // Show url in pre tag appended to body
-// const pre = document.createElement('pre');
-// pre.textContent = url;
-// // If document is not loaded schedule an anonymous function to run on load
-// if (document.readyState === 'loading') {
-//     document.addEventListener('DOMContentLoaded', () => {
-//         document.body.appendChild(pre);
-//     });
-// }
+        return null; // Not found
+    }
 
-const test = `
-{
-    "header": "Allt om Koalor",
-    "useStandardMeasurement": "true",
-    "standardUnitWidth": "%",
-    "standardUnitHeight": "px",
-    "standardMeasureUnitMargin": "px",
-    "standardMeasureUnitBorder": "px",
-    "standardMeasureUnitFont": "px",
-    "mainPageLang": "sv",
-    "secondaryPageLang": "en",
-    "StyletextInfoRubrik1": "font-size:36px;color:#005500;",
-    "StyletextInfoRubrik2": "font-size:28px;color:#006633;",
-    "StyletextInfoRubrik3": "font-size:24px;color:green;",
-    "StyletextInfo1": "font-size:18px;color:#003300;",
-    "StyletextInfo2": "font-size:16px;color:#666600;",
-    "StyletextInfo3": "font-size:18px;color:#ff6600;",
-    "StyletextInfo4": "font-size:16px;color:#005500;",
-    "StyletextInfo5": "font-size:14px;",
-    "Stylediv1": "width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;border:5px solid rgb(145,106,145);border-radius:25px;padding:5px;padding-bottom:25px;",
-    "Stylediv1div1": "width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:row;border:5px solid rgb(145,106,145);",
-    "Stylediv1div2": "width:80%;height:250px;display:flex;background-color:#ffe4b5;flex-flow:column;border:5px solid rgb(145,106,145);",
-    "Stylediv1div3": "width:18%;height:100px;display:flex;background-color:#ffe4ff;flex-flow:column;border:5px solid rgb(145,106,145);",
-    "Stylediv1div2div1": "width:18%;height:100px;display:flex;background-color:#ffe4ff;flex-flow:column;",
-    "Stylediv1div2div2": "width:18%;height:100px;display:flex;background-color:#ffe4ff;flex-flow:column;",
-    "Stylediv1div2div3": "width:18%;height:100px;display:flex;background-color:#ffe4ff;flex-flow:column;",
-    "Stylediv1div4": "border-radius:25px;",
-    "Stylediv1div5": "border-radius:25px;",
-    "Stylediv1div6": "border-radius:25px;",
-    "Stylediv1div7": "padding:5px;",
-    "Stylediv1div8": "padding:5px;",
-    "Stylediv1div9": "padding:5px;",
-    "div1textInfoRubrik1_sv": "Koalor – Allmänt",
-    "div1textInfoRubrik1_en": "Koalas – General",
-    "div1div1textInfoRubrik2_sv": "Fakta om Koalor",
-    "div1div1textInfoRubrik2_en": "Facts about Koalas",
-    "div1div2textInfoRubrik3_sv": "Roliga fakta",
-    "div1div2textInfoRubrik3_en": "Fun facts",
-    "div1textInfo1_sv": "Koalor är små tåliga trädlevande djur från Australien.",
-    "div1textInfo1_en": "Koalas are small, hardy, arboreal animals from Australia.",
-    "div1div1textInfo2_sv": "De är kända för att äta eukalyptusblad.",
-    "div1div1textInfo2_en": "They are known to eat eucalyptus leaves.",
-    "div1div2textInfo3_sv": "Koalor äter nästan uteslutande eukalyptusblad.",
-    "div1div2textInfo3_en": "Koalas eat almost exclusively eucalyptus leaves.",
-    "div1div3textInfo4_sv": "Koalor sover upp till 20 timmar per dag.",
-    "div1div3textInfo4_en": "Koalas sleep up to 20 hours per day.",
-    "div1div2div1textInfo5_sv": "Koalor har starka klor för att klättra i träd.",
-    "div1div2div1textInfo5_en": "Koalas have strong claws for climbing trees.",
-    "div1div2div2textInfo6_sv": "Koalor kommunicerar med olika ljud, från snarkningar till skrik.",
-    "div1div2div2textInfo6_en": "Koalas communicate with a variety of sounds, from snoring to screaming.",
-    "div1div2div3textInfo7_sv": "test",
-    "div1div2div3textInfo7_en": "test"
-}
-`;
+    // Returns a new pageKey if successful, else null
+    async ReplacePage(pageKey, html) {
+        // Ensure pageKey exists in FetchAllPages else return null
+        const allPages = await this.FetchAllPages();
+        if (!allPages.hasOwnProperty(pageKey)) {
+            return null;
+        }
 
-const url = wrapper.JsonToUrl(JSON.parse(test));
+        // Delete the page
+        await this.RemovePage(pageKey);
 
-const pre = document.createElement('pre');
-pre.textContent = url;
-// If document is not loaded schedule an anonymous function to run on load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        document.body.appendChild(pre);
-    });
-}
-// Else append immediately
-else {
-    document.body.appendChild(pre);
+        // Create a new page with the same header and lang as the deleted page
+        const header = allPages[pageKey].header;
+        const mainPageLang = allPages[pageKey].mainPageLang || "sv";
+        const useStandardMeasurement = allPages[pageKey].useStandardMeasurement || "false";
+
+        const newPageKey = await this.CreatePage(html, header, mainPageLang, useStandardMeasurement);
+
+        if (newPageKey === null) {
+            return null; // Creation failed
+        }
+
+        return newPageKey;
+    }
 }
