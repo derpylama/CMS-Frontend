@@ -3,6 +3,8 @@
 const nf = require('node-fetch');
 const fetch = nf.default || nf;
 
+const fs = require('fs');
+
 class WonkyCMSApiWrapper {
     constructor(baseUrl = "https://elias.ntigskovde.se/") {
         this.indexUrl = baseUrl + "index.php";
@@ -12,20 +14,37 @@ class WonkyCMSApiWrapper {
     }
 
     async _getText(url, timeoutMs) {
+        // const res = await this._httpRequest('GET', url, { timeoutMs });
+        // if (res.statusCode < 200 || res.statusCode >= 300) {
+        //     throw new Error(`HTTP ${res.statusCode} when GET ${url}`);
+        // }
+        //return res.text;
+        // Use node-fetch instead
         return await fetch(url, { method: 'GET', timeout: timeoutMs || this.defaultTimeoutMs })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status} when GET ${url}`);
-                }
-                return res.text();
-            })
-            .catch(err => {
-                throw new Error(`Fetch error: ${err.message}`);
-            });
+        .then(res => {
+            // Set res charset to utf8
+            res.headers.set('charset', 'utf-8');
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status} when GET ${url}`);
+            }
+            return res.text();
+        })
+        .catch(err => {
+            throw new Error(`Fetch error: ${err.message}`);
+        });
     }
 
     async _getJson(url, timeoutMs) {
+        // const text = await this._getText(url, timeoutMs);
+        // try {
+        //     return JSON.parse(text);
+        // } catch (e) {
+        //     throw new Error('Failed to parse JSON response');
+        // }
+
         const text = await this._getText(url, timeoutMs);
+
+        fs.writeFileSync('debug.txt', text, 'utf-8');
 
         try {
             return JSON.parse(text);
@@ -35,27 +54,40 @@ class WonkyCMSApiWrapper {
     }
 
     async _postForm(url, formObj, timeoutMs) {
-        const body = new URLSearchParams();
+        // const body = Object.entries(formObj)
+        //     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+        //     .join('&');
+        // const headers = {
+        //     'Content-Type': 'application/x-www-form-urlencoded',
+        //     'Content-Length': Buffer.byteLength(body)
+        // };
+        // const res = await this._httpRequest('POST', url, { headers, body, timeoutMs });
+        // if (res.statusCode < 200 || res.statusCode >= 300) {
+        //     throw new Error(`HTTP ${res.statusCode} when POST ${url}`);
+        // }
+        // return res.text;
 
+        // Use node-fetch bellow
+
+        const body = new URLSearchParams();
         for (const [k, v] of Object.entries(formObj)) {
             body.append(k, String(v));
         }
-
         return await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: body.toString(),
             timeout: timeoutMs || this.defaultTimeoutMs
         })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status} when POST ${url}`);
-                }
-                return res.text();
-            })
-            .catch(err => {
-                throw new Error(`Fetch error: ${err.message}`);
-            });
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status} when POST ${url}`);
+            }
+            return res.text();
+        })
+        .catch(err => {
+            throw new Error(`Fetch error: ${err.message}`);
+        });
     }
 
     // === JSON FUNCTIONS ===
@@ -64,17 +96,16 @@ class WonkyCMSApiWrapper {
     JsonToUrl(jsonobj) {
         const parts = [];
 
-        // %20 is space, + is space in x-www-form-urlencoded
         const encode = (val) => encodeURIComponent(String(val)).replace(/%20/g, "+");
-
+        // %20 is space, + is space in x-www-form-urlencoded
         const encodeColor = (val) => encodeURIComponent(String(val));
 
-        // Base page info
+        // === Base page info ===
         const header = jsonobj.header || "";
         parts.push(`pageHeader=${encode(header)}`);
         parts.push(`pageLang=${encode(jsonobj.mainPageLang || "sv")}`);
 
-        // Standard Measurements flag must always be present
+        // === Standard Measurements flag must always be present ===
         const useStd = String(jsonobj.useStandardMeasurement) === "true";
         parts.push(`useStandardMeasurement=${useStd ? "true" : "false"}`);
         if (useStd) {
@@ -85,10 +116,10 @@ class WonkyCMSApiWrapper {
             if (jsonobj.standardMeasureUnitFont) parts.push(`standardMeasureUnitFont=${encode(jsonobj.standardMeasureUnitFont)}`);
         }
 
-        // Build div map (prefix -> divN) and parent links
+        // === Build div map (prefix -> divN) and parent links ===
         const { orderedPrefixes, prefixToDivName, prefixToParentDivName } = this._buildDivMap(jsonobj);
 
-        // Divs
+        // === Divs ===
         for (let i = 0; i < orderedPrefixes.length; i++) {
             const prefix = orderedPrefixes[i];
             const styles = jsonobj[`Style${prefix}`] || "";
@@ -108,19 +139,19 @@ class WonkyCMSApiWrapper {
                 parts.push(`addDivToDiv[]=${parentDivName}`);
             }
 
-            if (width)      parts.push(`newDivWidth[]=${encode(width)}`);
-            if (height)     parts.push(`newDivHeight[]=${encode(height)}`);
-            if (display)    parts.push(`newDivDisplay[]=${encode(display)}`);
-            if (bgColor)    parts.push(`newDivColor[]=${encodeColor(bgColor)}`);
-            if (flow)       parts.push(`newDivFlow[]=${encode(flow)}`);
-            if (justify)    parts.push(`newDivJustify[]=${encode(justify)}`);
-            if (align)      parts.push(`newDivAlign[]=${encode(align)}`);
+            if (width) parts.push(`newDivWidth[]=${encode(width)}`);
+            if (height) parts.push(`newDivHeight[]=${encode(height)}`);
+            if (display) parts.push(`newDivDisplay[]=${encode(display)}`);
+            if (bgColor) parts.push(`newDivColor[]=${encodeColor(bgColor)}`);
+            if (flow) parts.push(`newDivFlow[]=${encode(flow)}`);
+            if (justify) parts.push(`newDivJustify[]=${encode(justify)}`);
+            if (align) parts.push(`newDivAlign[]=${encode(align)}`);
             if (paddingBot) parts.push(`newDivPaddingBot[]=${encode(paddingBot)}`);
         }
 
-        // Text info
+        // === Text info ===
         const texts = this._extractTexts(jsonobj, prefixToDivName);
-        
+        // Maintain the order similar to known-good
         for (const t of texts.headers) parts.push(`addTextInformationHeader[]=${encode(t)}`);
         for (const t of texts.headerSizes) parts.push(`addTextInformationHeaderSize[]=${encode(t)}`);
         for (const t of texts.headerColors) parts.push(`addTextInformationHeaderColor[]=${encodeColor(t)}`);
@@ -131,7 +162,7 @@ class WonkyCMSApiWrapper {
         for (const t of texts.textSizes) parts.push(`addTextInformationSize[]=${encode(t)}`);
         for (const t of texts.textColors) parts.push(`addTextInformationColor[]=${encodeColor(t)}`);
 
-        // Images (extract from JSON keys + styles)
+        // === Images (extract from JSON keys + styles) ===
         const images = this._extractImages(jsonobj, prefixToDivName);
         for (const img of images) {
             parts.push(`addImage[]=${encode(img.src)}`);
