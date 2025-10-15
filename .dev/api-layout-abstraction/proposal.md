@@ -27,3 +27,5 @@ Else we always use hidden elements to encode.
 
 As an example we could encode all *content* inside ex. <p> tags which allows the to be viewed by other clients then we have a hidden `<p display:none>` which contains mapping data:
 `jsonkey` => proepr element, properties and proper css.
+
+We can then encode all css styles and html elements supported by the API as they are but provide additionall mapping data in a a monster block.
