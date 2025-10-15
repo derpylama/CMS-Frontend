@@ -2,6 +2,7 @@
 :root {
     --side_padding: 2rem;
     --side_margin: 2rem;
+
 }
 
 
@@ -25,10 +26,7 @@ button {
     cursor: pointer;
 }
 /*-----------------------------*/
-#main_container {
-    display: grid;
-    grid-template-columns: 20rem auto;
-}
+
 .side_container {
     background-color: rgba(0, 0, 0, 0.2);
     border-right: solid;
@@ -86,7 +84,7 @@ button {
     flex-direction: column;
 }
 
-.button {
+.button_test {
     border: solid 4px rgb(0, 200, 0);
     color: rgb(0, 200, 0);
 
@@ -115,7 +113,7 @@ button {
     
 }
 
-.button:active {
+.button_test:active {
     transform: translateY(8px);
 
     box-shadow: 0 6px rgba(0, 127, 0, 1),0 14px rgba(0, 0, 0, 0.4);
@@ -123,7 +121,7 @@ button {
     color: rgba(100, 200, 0, 1);
 
 }
-.button:hover {
+.button_test:hover {
     border-color: rgba(0, 255, 0, 0.546);
 }
 
