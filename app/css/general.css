@@ -16,7 +16,7 @@ button {
 
 
 
-.topbar_container {
+.topbar-container {
     border-bottom: solid var(--standard-border-width);
     margin-bottom: var(--standard-gap-width);
 
@@ -45,14 +45,14 @@ button {
 
 
 
-.topbar_header {
+.topbar-header {
     display: flex;
     align-items: center;
     padding: 0 2rem;
     font-size: 2rem;
 }
 
-.topbar_button_container {
+.topbar-button-container {
     height: 100%;
     display: inline-flex;
     gap: var(--standard-border-width);
@@ -81,7 +81,7 @@ button {
 
 
 
-.grid_container {
+.grid-container {
     display: grid;
     grid-template-columns: 20rem auto;
 }
