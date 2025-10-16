@@ -56,37 +56,21 @@ ESES Extension
       since the element has `display: none` we hint to other clients that this is not meant to be displayed.
       
       The JSON structure is: 
-        {
-            "mapped": {
-                "<hiarchy-key>": {
-                    "element": "<original-element-type>",
-                    "attributes": {
-                        "<attribute-name>": "<attribute-value>",
-                        ...
-                    },
-                    "styles": {
-                        "<css-property-name>": "<css-property-value>",
-                        ...
-                    },
-                    "content": "<non-text-content-base64-encoded>"
+        {{
+            "<hiarchy-key>": {
+                "element": "<original-element-type>",
+                "attributes": {
+                    "<attribute-name>": "<attribute-value>",
+                    ...
                 },
-                ...
+                "styles": {
+                    "<css-property-name>": "<css-property-value>",
+                    ...
+                },
+                "content": "<non-text-content-base64-encoded>",
+                "represented": bool // true for any element that is not in the NotRepresented category, false for those in that category
             },
-            "notrepresented": [
-                {
-                    "element": "<original-element-type>",
-                    "attributes": {
-                        "<attribute-name>": "<attribute-value>",
-                        ...
-                    },
-                    "styles": {
-                        "<css-property-name>": "<css-property-value>",
-                        ...
-                    },
-                    "content": "<non-text-content-base64-encoded>"
-                },
-                ...
-            ]
+            ...
         }
         //MARK: ^^ Above does not work, nonrepresented must have a parent hiarchy key or simialr to know where they are from? and it must handle when its child or either representable or not 
 
@@ -118,7 +102,7 @@ ESES Extension
     2. Text - Al elements that are primarily text-based, ex semantics like `em` or formatters like `b` and `i`. - Mapped to `p`
     3. Containers - Elements semantic or layouting that contain other elements, ex `main` or `span` - Mapped to `div`
     4. Emulated - Elements who are not directly representable but can have their core properties represented as text for non ESES clients, ex `video` who can be represented as `[Video: <source>]` - Mapped to `p`
-    5. NotRepresented - Elements that have no relevant representation outside of ESES, ex `script`, self closing elements or non-content elements are also in this category like `br`
+    5. NotRepresented - Elements that have no relevant representation outside of ESES, ex `script`, self closing elements or non-content elements are also in this category like `br`, stored fully in ESES data with "represented" field set to false.
 
     Note! If an element mapped as headers or text contains other elements it will be represented as a container (div) this is a preprocess, so later the children will have a "parenttype" field in the ESES mapping data. //MARK: Is this sufficient to ensure data can be roundtripped?
 
