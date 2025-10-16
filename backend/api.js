@@ -63,7 +63,7 @@ class WonkyCMSApiWrapper {
     // === JSON FUNCTIONS ===
 
     // Does not return weburl but creation URL parameters as string
-    JsonToUrl(jsonobj, urlencodeBrackets = false) {
+    JsonToUrl(jsonobj, urlencodeBrackets = false, procspaces = true) { // If urlencodeBrackets is true, [] becomes %5B%5D else it stays as [], if procspaces is true spaces become %20 else they become +
         function getCSSValue(style, prop) {
             const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`); // \s means whitespace, * means zero or more, [^;]+ means one or more characters that are not semicolon
             const match = style.match(regex);
@@ -182,7 +182,10 @@ class WonkyCMSApiWrapper {
         const parts = [];
 
         // %20 is space, + is space in x-www-form-urlencoded
-        const encode = (val) => encodeURIComponent(String(val)).replace(/%20/g, "+");
+        const encode = (val) => {
+            //encodeURIComponent(String(val)).replace(/%20/g, "+");
+            return procspaces ? encodeURIComponent(String(val)) : encodeURIComponent(String(val)).replace(/%20/g, "+");
+        }
 
         const encodeColor = (val) => encodeURIComponent(String(val));
 

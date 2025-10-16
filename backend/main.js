@@ -107,6 +107,12 @@ app.whenReady().then(() => {
         // console.log("Testing JsonToUrl... (with urlencodeBrackets = true)");
         // const res = api.JsonToUrl(JSON.parse(jsonstr), true);
 
+        // console.log("Testing JsonToUrl... (with procspaces = false)");
+        // const res = api.JsonToUrl(JSON.parse(jsonstr), false, false);
+
+        // console.log("Testing JsonToUrl... (with procspaces = true)");
+        // const res = api.JsonToUrl(JSON.parse(jsonstr), false, true);
+
         // console.log("Result:", res);
 
         // const html = api.JsonToHTML(res);
