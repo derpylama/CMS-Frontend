@@ -12,7 +12,12 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
     createWindow()
-
+    
+    
+//    const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/")
+//
+//    api.GetPreviewOfPages();
+//
 //     html = `
 // <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
 //         <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
