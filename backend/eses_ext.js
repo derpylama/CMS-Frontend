@@ -56,7 +56,7 @@ ESES Extension
       since the element has `display: none` we hint to other clients that this is not meant to be displayed.
       
       The JSON structure is: 
-        {{
+        {
             "<hiarchy-key>": {
                 "element": "<original-element-type>",
                 "attributes": {
@@ -115,7 +115,7 @@ ESES Extension
 
   Example WonkyHTML with ESES data:
     <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
-        <p>ESES1:...base64-encode-of-json...</p>
+        <p style="display: none;">ESES1:...base64-encode-of-json...</p>
         <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
         <p style="font-size:18px;color:#003300;">Koalor är små tåliga trädlevande djur från Australien.</p>
         <img style="width:100%;height:250px;height:250;border-radius:10;border-radius:10;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image">

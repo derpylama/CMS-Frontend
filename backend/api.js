@@ -63,7 +63,7 @@ class WonkyCMSApiWrapper {
     // === JSON FUNCTIONS ===
 
     // Does not return weburl but creation URL parameters as string
-    JsonToUrl(jsonobj, urlencodeBrackets = false, procspaces = true) { // If urlencodeBrackets is true, [] becomes %5B%5D else it stays as [], if procspaces is true spaces become %20 else they become +
+    JsonToUrl(jsonobj, lang = "sv", urlencodeBrackets = false, procspaces = true) { // If urlencodeBrackets is true, [] becomes %5B%5D else it stays as [], if procspaces is true spaces become %20 else they become +
         function getCSSValue(style, prop) {
             const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`); // \s means whitespace, * means zero or more, [^;]+ means one or more characters that are not semicolon
             const match = style.match(regex);
@@ -239,7 +239,7 @@ class WonkyCMSApiWrapper {
         }
 
         // Text info
-        const texts = extractTexts(jsonobj, prefixToDivName);
+        const texts = extractTexts(jsonobj, prefixToDivName, lang);
         
         for (const t of texts.headers) parts.push(`addTextInformationHeader${brackets}=${encode(t)}`);
         for (const t of texts.headerSizes) parts.push(`addTextInformationHeaderSize${brackets}=${encode(t)}`);
@@ -611,7 +611,7 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
         return await this.CreatePage(jsonobj, header, mainPageLang, useStandardMeasurement);
     }
 
-    async ReplacePageUsingHtml(pageKey, html, header = null) {
+    async ReplacePageUsingHtml(pageKey, html, header = null, lang = null) {
         // Ensure pageKey exists in FetchAllPages else return null
         const allPages = await this.FetchAllPages(false); // Fetch all including deleted
         if (!allPages.hasOwnProperty(pageKey)) {
@@ -630,10 +630,12 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
         if (header === null) {
             header = allPages[pageKey].header;
         }
-        const mainPageLang = allPages[pageKey].mainPageLang || "sv";
+        if (lang === null) {
+            lang = allPages[pageKey].mainPageLang || "sv";
+        }
         const useStandardMeasurement = allPages[pageKey].useStandardMeasurement || "false";
 
-        const jsonobj = this.HtmlToJson(html, header, mainPageLang, useStandardMeasurement);
+        const jsonobj = this.HtmlToJson(html, header, lang, useStandardMeasurement);
 
         const newPageKey = await this.CreatePage(jsonobj, header);
 

@@ -86,7 +86,7 @@ app.whenReady().then(() => {
     // }
     // `;
 
-    // const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
+    const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
     //const api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
     (async () => {
         // console.log("Testing GetPage...");
@@ -117,6 +117,20 @@ app.whenReady().then(() => {
 
         // const html = api.JsonToHTML(res);
         // console.log(html);
+
+
+        // Get page page29 with "en"
+        const htmlen = await api.GetPageAsHtml("page29", "en");
+        //console.log(htmlen);
+        const jsonen = api.HtmlToJson(htmlen, "TestPageFromElectron", "en");
+        //console.log(jsonen);
+        const urlen = api.JsonToUrl(jsonen, "en");
+        console.log(urlen);
+
+        // Create a new page using html
+        // const res = await api.CreatePageUsingHtml(htmlen, "TestPageFromElectron - Created from page29 in English", "en");
+        // console.log(res);
+    
     })();
 
 })
