@@ -483,19 +483,33 @@ const cons = document.querySelectorAll(".cons")
 
 var buttonsCon = document.getElementsByClassName("topbar_button_container")[0]
 
-
+function resetButtons() {
+    [viewButton, editButton, createPageButton].forEach(button =>{
+        button.style.borderBottom = "none"
+        button.style.color = ""
+    });
+}
+function selectButton(button) {
+    button.style.borderBottom = "solid var(--standard-select-border)"
+    button.style.color = "var(--standard-select-color)"
+}
 
 editButton.addEventListener("click", (event) => {
     cons.forEach((element) => {
         element.style.display = "none"
     })
     document.getElementById("edit_container").style.display = "block"
+    resetButtons()
+    selectButton(document.getElementById("top_button_edit"))
 })
 viewButton.addEventListener("click", (event) => {
     cons.forEach((element) => {
         element.style.display = "none"
     })
     document.getElementById("view_container").style.display = "block"
+    resetButtons()
+    selectButton(document.getElementById("top_button_view"))
+
     
 })
 
@@ -504,6 +518,8 @@ createPageButton.addEventListener("click", (event) => {
         element.style.display = "none"
     })
     document.getElementById("create_page_container").style.display = "block"
+    resetButtons()
+    selectButton(document.getElementById("top_button_create_page"))
     
 })
 

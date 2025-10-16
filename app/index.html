@@ -12,6 +12,7 @@
       content="default-src 'self'; script-src 'self'"
     />
 
+    <link rel="stylesheet" type="text/css" href="css/vars.css">
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <link rel="stylesheet" type="text/css" href="css/general.css">
     <script src="js/renderer.js" defer></script>
@@ -21,9 +22,9 @@
     <div class="topbar_container">
       <a class="topbar_header">Smörig CMS</a>
       <div class="topbar_button_container">
-        <button id="top_button_edit" class="button button_topbar">Edit</button>
-        <button id="top_button_view" class="button button_topbar">View</button>
-        <button id="top_button_create_page"class="button button_topbar">Create Page</button> 
+        <button id="top_button_edit" class="topbar-button">Edit</button>
+        <button id="top_button_view" class="topbar-button">View</button>
+        <button id="top_button_create_page"class="topbar-button">Create Page</button> 
       </div>
      
     </div>
@@ -114,10 +115,15 @@
           </div>
         </div> 
       </div>
-      
+
       <div id="view_container" class="cons">
         <h1>TEST--------------------------</h1>
       </div>
+      <div id="create_page_container"></div>
+        <select id="select-language">
+          <option>eng</option>
+          <option>swe</option>
+        </select>
     </div>
     
 

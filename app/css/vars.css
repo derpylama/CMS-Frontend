@@ -1,0 +1,22 @@
+:root {
+    --lower-background: rgb(119, 255, 0);
+    --standard-background-color: rgb(103, 197, 104);
+    --light-background-color: rgba(0, 0, 0, 0.2);
+    --medium-background-color: rgba(0, 0, 0, 0.4);
+
+
+    --standard-select-color: rgb(255, 0, 0);
+    --standard-select-border: 0.4rem;
+
+    --standard-font-color: rgb(0,0,0);
+    --standard-border-color: rgba(0, 0, 0, 0.8);
+
+    --medium-border-radius: 1rem;
+    --standard-border-width: 0.2rem;
+
+    --standard-gap-width: 1.5rem;
+    --page-gap-width: 2rem;
+
+    
+}
+
