@@ -1,64 +1,32 @@
+/* === Reusable Classes === */
 
-body {
-    background-color: var(--standard-background-color);
-    color: var(--standard-font-color);
-
-    font-family: Arial, Helvetica, sans-serif;
-    margin: 0;
-    
-}
-button {
-    cursor: pointer;
+.input-field {
+    margin: 0.2rem 0 1rem;
+    width: 15rem;
 }
 
-
-
-
-
-
-.topbar-container {
-    border-bottom: solid var(--standard-border-width);
-    margin-bottom: var(--standard-gap-width);
-
-    width: 100%;
-    height: 4rem;
-
-    background-color: var(--medium-background-color);
-
-    display:flex;
-    flex-direction: row;
-    
+.unit-select {
+    width: 4rem;
+    margin-bottom: 0.6rem;
 }
 
-.topbar-button {
-    font-size: 1rem;
-    width: 8rem;
-    height: 100%;
-    border: none;
-    
-    
-    padding: 4px;
-
-    border-width: 5px;
-}
-
-
-
-
-.topbar-header {
+.input-container {
     display: flex;
-    align-items: center;
-    padding: 0 2rem;
-    font-size: 2rem;
+    flex-direction: column;
 }
 
-.topbar-button-container {
-    height: 100%;
-    display: inline-flex;
-    gap: var(--standard-border-width);
-    background-color: var(--standard-font-color);
+.grid-container {
+    display: grid;
+    grid-template-columns: 20rem auto;
 }
 
+
+.button-highlighted {
+    color: var(--highlighted-color);
+    border-bottom: solid var(--highlighted-border-width);
+}
+
+/* MARK: Move button colors to vars.css */
 .button {
     border: solid rgba(0, 0, 0, 0.857);
     background-color: rgb(65, 204, 9);
@@ -73,15 +41,56 @@ button {
 
 }
 
+/* MARK: Use rem? */
+.large-button {
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 1.5rem;
+}
+
+/* MARK: Use rem? */
+.small-button {
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 1rem;
+}
 
 
+/* MARK: Move button colors to vars.css and use rem for border width */
+.button-select {
+    font-size: 1rem;
+    border: solid 1.2px rgba(0, 0, 0, 0.6); 
+    padding: 0.5rem 0.6rem 0.4rem;
+    border-radius: 0.4rem;
+
+}
+.button-select:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+.button-select:active {
+    background-color: rgba(0, 0, 0, 0.36);
+    
+}
 
 
+/* MARK: Move button colors to vars.css and use rem for border width */
+.button-test {
+    border: solid 4px rgb(0, 200, 0);
+    color: rgb(0, 200, 0);
 
+    margin-bottom: 22px;
+    transition: 0.2s ease;
+    box-shadow: 0 14px rgba(0, 127, 0, 1),0 22px rgba(0, 0, 0, 0.4);
 
+}
+.button-test:active {
+    transform: translateY(8px);
 
+    box-shadow: 0 6px rgba(0, 127, 0, 1),0 14px rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: rgba(100, 200, 0, 1);
 
-.grid-container {
-    display: grid;
-    grid-template-columns: 20rem auto;
+}
+.button-test:hover {
+    border-color: rgba(0, 255, 0, 0.546);
 }
