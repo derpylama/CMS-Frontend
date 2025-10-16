@@ -63,7 +63,7 @@ class WonkyCMSApiWrapper {
     // === JSON FUNCTIONS ===
 
     // Does not return weburl but creation URL parameters as string
-    JsonToUrl(jsonobj, lang = "sv", urlencodeBrackets = false, procspaces = true) { // If urlencodeBrackets is true, [] becomes %5B%5D else it stays as [], if procspaces is true spaces become %20 else they become +
+    JsonToUrl(jsonobj, lang = null, urlencodeBrackets = false, procspaces = true) { // If urlencodeBrackets is true, [] becomes %5B%5D else it stays as [], if procspaces is true spaces become %20 else they become +
         function getCSSValue(style, prop) {
             const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`); // \s means whitespace, * means zero or more, [^;]+ means one or more characters that are not semicolon
             const match = style.match(regex);
@@ -190,9 +190,12 @@ class WonkyCMSApiWrapper {
         const encodeColor = (val) => encodeURIComponent(String(val));
 
         // Base page info
+        if (lang === null) {
+            lang = jsonobj.mainPageLang || "sv";
+        }
         const header = jsonobj.header || "";
         parts.push(`pageHeader=${encode(header)}`);
-        parts.push(`pageLang=${encode(jsonobj.mainPageLang || "sv")}`);
+        parts.push(`pageLang=${encode(lang)}`);
 
         // Standard Measurements flag must always be present
         const useStd = String(jsonobj.useStandardMeasurement) === "true";
