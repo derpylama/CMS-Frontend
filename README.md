@@ -36,7 +36,7 @@ A beautiful description
     7. Style
     8. VALUE
 - CSS place colors and reusable styles in `:root` then use `var(--)` throughout the file.
-- CSS responsive, use `rem` or `em` units.
+- CSS responsive, use `rem`, `em`, `%` units.
 
 
 ## Features
