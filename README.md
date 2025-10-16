@@ -24,6 +24,8 @@ A beautiful description
 - `HTML-Element-Classes` are `kebab-case`
 - Indentation is four spaces
 - Curly brackets for functions and classes have a space before them so `class API {` not `class API{` and `function Func() {` not `function Func(){`
+- CSS properties should have a space following the colon, so `width: 10vw` not `width:10vw`
+- CSS variables should be descriptive and distinct from other variables.
 
 ## Code best practise
 - HTML property order:
