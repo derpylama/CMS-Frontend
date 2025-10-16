@@ -339,7 +339,7 @@ class WonkyCMSApiWrapper {
             }
         }
 
-        const url = this.JsonToUrl(jsonobj);
+        const url = this.JsonToUrl(jsonobj, jsonobj.mainPageLang || "sv");
 
         // POST url
         await this.PostCreationUrl(url);
