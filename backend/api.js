@@ -63,7 +63,7 @@ class WonkyCMSApiWrapper {
     // === JSON FUNCTIONS ===
 
     // Does not return weburl but creation URL parameters as string
-    JsonToUrl(jsonobj) {
+    JsonToUrl(jsonobj, urlencodeBrackets = false) {
         function getCSSValue(style, prop) {
             const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`); // \s means whitespace, * means zero or more, [^;]+ means one or more characters that are not semicolon
             const match = style.match(regex);
@@ -177,6 +177,8 @@ class WonkyCMSApiWrapper {
             return images;
         }
 
+        const brackets = urlencodeBrackets ? '%5B%5D' : '[]'; // %5B is [, %5D is ]
+
         const parts = [];
 
         // %20 is space, + is space in x-www-form-urlencoded
@@ -220,41 +222,41 @@ class WonkyCMSApiWrapper {
             // For the first div (root), do NOT add addDivToDiv[]
             if (i > 0) {
                 const parentDivName = prefixToParentDivName[prefix];
-                parts.push(`addDivToDiv[]=${parentDivName}`);
+                parts.push(`addDivToDiv${brackets}=${parentDivName}`);
             }
 
-            if (width)      parts.push(`newDivWidth[]=${encode(width)}`);
-            if (height)     parts.push(`newDivHeight[]=${encode(height)}`);
-            if (display)    parts.push(`newDivDisplay[]=${encode(display)}`);
-            if (bgColor)    parts.push(`newDivColor[]=${encodeColor(bgColor)}`);
-            if (flow)       parts.push(`newDivFlow[]=${encode(flow)}`);
-            if (justify)    parts.push(`newDivJustify[]=${encode(justify)}`);
-            if (align)      parts.push(`newDivAlign[]=${encode(align)}`);
-            if (paddingBot) parts.push(`newDivPaddingBot[]=${encode(paddingBot)}`);
+            if (width)      parts.push(`newDivWidth${brackets}=${encode(width)}`);
+            if (height)     parts.push(`newDivHeight${brackets}=${encode(height)}`);
+            if (display)    parts.push(`newDivDisplay${brackets}=${encode(display)}`);
+            if (bgColor)    parts.push(`newDivColor${brackets}=${encodeColor(bgColor)}`);
+            if (flow)       parts.push(`newDivFlow${brackets}=${encode(flow)}`);
+            if (justify)    parts.push(`newDivJustify${brackets}=${encode(justify)}`);
+            if (align)      parts.push(`newDivAlign${brackets}=${encode(align)}`);
+            if (paddingBot) parts.push(`newDivPaddingBot${brackets}=${encode(paddingBot)}`);
         }
 
         // Text info
         const texts = extractTexts(jsonobj, prefixToDivName);
         
-        for (const t of texts.headers) parts.push(`addTextInformationHeader[]=${encode(t)}`);
-        for (const t of texts.headerSizes) parts.push(`addTextInformationHeaderSize[]=${encode(t)}`);
-        for (const t of texts.headerColors) parts.push(`addTextInformationHeaderColor[]=${encodeColor(t)}`);
-        for (const t of texts.divHeaders) parts.push(`addTextInformationDivHeader[]=${t}`);
+        for (const t of texts.headers) parts.push(`addTextInformationHeader${brackets}=${encode(t)}`);
+        for (const t of texts.headerSizes) parts.push(`addTextInformationHeaderSize${brackets}=${encode(t)}`);
+        for (const t of texts.headerColors) parts.push(`addTextInformationHeaderColor${brackets}=${encodeColor(t)}`);
+        for (const t of texts.divHeaders) parts.push(`addTextInformationDivHeader${brackets}=${t}`);
 
-        for (const t of texts.texts) parts.push(`addTextInformation[]=${encode(t)}`);
-        for (const t of texts.textDivs) parts.push(`addTextInformationDiv[]=${t}`);
-        for (const t of texts.textSizes) parts.push(`addTextInformationSize[]=${encode(t)}`);
-        for (const t of texts.textColors) parts.push(`addTextInformationColor[]=${encodeColor(t)}`);
+        for (const t of texts.texts) parts.push(`addTextInformation${brackets}=${encode(t)}`);
+        for (const t of texts.textDivs) parts.push(`addTextInformationDiv${brackets}=${t}`);
+        for (const t of texts.textSizes) parts.push(`addTextInformationSize${brackets}=${encode(t)}`);
+        for (const t of texts.textColors) parts.push(`addTextInformationColor${brackets}=${encodeColor(t)}`);
 
         // Images (extract from JSON keys + styles)
         const images = extractImages(jsonobj, prefixToDivName);
         for (const img of images) {
-            parts.push(`addImage[]=${encode(img.src)}`);
-            parts.push(`addImageDiv[]=${img.div}`);
-            if (img.display) parts.push(`addImageDisplay[]=${encode(img.display)}`);
-            if (img.width) parts.push(`addImageWidth[]=${encode(img.width)}`);
-            if (img.height) parts.push(`addImageHeight[]=${encode(img.height)}`);
-            if (img.borderRadius) parts.push(`addImageBorderRadius[]=${encode(img.borderRadius)}`);
+            parts.push(`addImage${brackets}=${encode(img.src)}`);
+            parts.push(`addImageDiv${brackets}=${img.div}`);
+            if (img.display) parts.push(`addImageDisplay${brackets}=${encode(img.display)}`);
+            if (img.width) parts.push(`addImageWidth${brackets}=${encode(img.width)}`);
+            if (img.height) parts.push(`addImageHeight${brackets}=${encode(img.height)}`);
+            if (img.borderRadius) parts.push(`addImageBorderRadius${brackets}=${encode(img.borderRadius)}`);
         }
 
         return `${parts.join("&")}`;
