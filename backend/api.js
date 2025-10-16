@@ -8,7 +8,7 @@ class WonkyCMSApiWrapper {
         this.indexUrl = baseUrl + "index.php";
         this.fetchUrl = baseUrl + "php/getinfo.php";
         this.baseUrl = baseUrl;
-		this.defaultTimeoutMs = 10000; // 10 seconds
+        this.defaultTimeoutMs = 10000; // 10 seconds
     }
 
     // === REQUEST HELPERS ===
@@ -521,133 +521,135 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
     }
 
     // MARK: The only allowed html we currently know is: <div>, <h3>, <p>, <img>
-    HtmlToJson(html, header, mainPageLang = "sv", useStandardMeasurement = "false") { // Takes HTML and returns {"header": "<header>", ...data...} (no DOM)
-		const nestedDivCounters = new Map(); // per-prefix counters
+    HtmlToJson(html, header, mainPageLang = "sv", escapeUnhandled = false, useStandardMeasurement = false) { // Takes HTML and returns {"header": "<header>", ...data...} (no DOM)
 
-		function nextNestedIndex(prefix) {
-			const current = nestedDivCounters.get(prefix) || 0;
-			const next = current + 1;
-			nestedDivCounters.set(prefix, next);
-			return next;
-		}
+        const nestedDivCounters = new Map(); // per-prefix counters
 
-		function extractAttr(attrs, name) {
-			const m = new RegExp(name + '\\s*=\\s*"([^"]*)"', 'i').exec(attrs) || new RegExp(name + "\\s*=\\s*'([^']*)'", 'i').exec(attrs); // \s means whitespace, * means zero or more, [^"]* means zero or more characters that are not double quotes, [^']* means zero or more characters that are not single quotes
-			return m ? m[1] : '';
-		}
+        function nextNestedIndex(prefix) {
+            const current = nestedDivCounters.get(prefix) || 0;
+            const next = current + 1;
+            nestedDivCounters.set(prefix, next);
+            return next;
+        }
+
+        function extractAttr(attrs, name) {
+            const m = new RegExp(name + '\\s*=\\s*"([^"]*)"', 'i').exec(attrs) ||
+                      new RegExp(name + "\\s*=\\s*'([^']*)'", 'i').exec(attrs); // \s means whitespace, * means zero or more, [^"]* means zero or more characters that are not double quotes, [^']* means zero or more characters that are not single quotes
+            return m ? m[1] : '';
+        }
 
         // Ensure header is defined else throw
         if (typeof header === 'undefined' || header === null || header.trim() === '') {
             throw new Error("Header is required");
         }
 
-		// Generate JSON from HTML
-		const result = {};
-		result.useStandardMeasurement = useStandardMeasurement; // Inject "useStandardMeasurement"
-		result.mainPageLang = mainPageLang;
+        // Generate JSON from HTML
+        const result = {};
+        result.useStandardMeasurement = (useStandardMeasurement === true || String(useStandardMeasurement).toLowerCase() === "true") ? "true" : "false"; 
+        result.mainPageLang = mainPageLang;
         result.header = header;
 
-		let headerCount = 0;
-		let paragraphCount = 0;
-		let imageCount = 0;
+        let headerCount = 0;
+        let paragraphCount = 0;
+        let imageCount = 0;
 
-		const stack = [];
-		let firstDivSeen = false;
+        const stack = [];
+        let firstDivSeen = false;
 
-		const tagRegex = /<(\/)?(div|h3|p|img)([^>]*)>/gi; // < means start of tag, (\/)? means optional / for closing tags, (div|h3|p|img) means tag name (div, h3, p, or img), ([^>]*) means zero or more characters that are not > (attributes), > means end of tag, /gi means global and case-insensitive
-		
+        const tagRegex = /<(\/)?(div|h3|p|img)([^>]*)>/gi; // < means start of tag, (\/)? means optional / for closing tags, (div|h3|p|img) means tag name (div, h3, p, or img), ([^>]*) means zero or more characters that are not > (attributes), > means end of tag, /gi means global and case-insensitive
+        
         let lastIndex = 0;
-		let match;
+        let match;
 
-		while ((match = tagRegex.exec(html)) !== null) {
-			const [full, closingSlash, tag, attrs] = match;
-			const isClosing = Boolean(closingSlash);
-			const lowerTag = tag.toLowerCase();
+        while ((match = tagRegex.exec(html)) !== null) {
+            const [full, closingSlash, tag, attrs] = match;
+            const isClosing = Boolean(closingSlash);
+            const lowerTag = tag.toLowerCase();
 
-			if (!isClosing) {
-				if (lowerTag === 'div') {
-					let prefix;
+            if (!isClosing) {
+                if (lowerTag === 'div') {
+                    let prefix;
                     
-					if (!firstDivSeen) {
-						firstDivSeen = true;
-						prefix = 'div1';
-						stack.push(prefix);
-					} else {
-						const parent = stack[stack.length - 1] || 'div1';
-						const n = nextNestedIndex(parent);
-						prefix = parent + 'div' + n;
-						stack.push(prefix);
-					}
+                    if (!firstDivSeen) {
+                        firstDivSeen = true;
+                        prefix = 'div1';
+                        stack.push(prefix);
+                    } else {
+                        const parent = stack[stack.length - 1] || 'div1';
+                        const n = nextNestedIndex(parent);
+                        prefix = parent + 'div' + n;
+                        stack.push(prefix);
+                    }
 
-					const style = extractAttr(attrs, 'style');
-					result['Style' + prefix] = (style || '').trim();
+                    const style = extractAttr(attrs, 'style');
+                    result['Style' + prefix] = (style || '').trim();
 
-				} else if (lowerTag === 'h3') {
-					headerCount += 1;
-					const prefix = stack[stack.length - 1] || 'div1';
-					const style = extractAttr(attrs, 'style');
-					const endTag = new RegExp(`</${tag}\\s*>`, 'i'); // \s* means zero or more whitespace characters, </${tag} means the closing tag, > means end of tag, /i means case-insensitive
-					const endMatch = endTag.exec(html.substring(tagRegex.lastIndex));
+                } else if (lowerTag === 'h3') {
+                    headerCount += 1;
+                    const prefix = stack[stack.length - 1] || 'div1';
+                    const style = extractAttr(attrs, 'style');
+                    const endTag = new RegExp(`</${tag}\\s*>`, 'i'); // \s* means zero or more whitespace characters, </${tag} means the closing tag, > means end of tag, /i means case-insensitive
+                    const endMatch = endTag.exec(html.substring(tagRegex.lastIndex));
 
-					let innerText = '';
-					if (endMatch) {
-						const start = tagRegex.lastIndex;
-						const end = start + endMatch.index;
-						innerText = html.substring(start, end).replace(/<[^>]*>/g, '').trim(); // <[^>]*> means any tag, g means global (all occurrences)
-						// move regex index to after closing tag
-						tagRegex.lastIndex = end + endMatch[0].length;
-					}
+                    let innerText = '';
+                    if (endMatch) {
+                        const start = tagRegex.lastIndex;
+                        const end = start + endMatch.index;
+                        innerText = html.substring(start, end).replace(/<[^>]*>/g, '').trim(); // <[^>]*> means any tag, g means global (all occurrences)
+                        // move regex index to after closing tag
+                        tagRegex.lastIndex = end + endMatch[0].length;
+                    }
 
-					const key = prefix + 'textInfoRubrik' + headerCount + '_' + mainPageLang;
-					const styleKey = 'StyletextInfoRubrik' + headerCount;
-					result[key] = innerText;
-					result[styleKey] = (style || '').trim();
+                    const key = prefix + 'textInfoRubrik' + headerCount + '_' + mainPageLang;
+                    const styleKey = 'StyletextInfoRubrik' + headerCount;
+                    result[key] = innerText;
+                    result[styleKey] = (style || '').trim();
 
-				} else if (lowerTag === 'p') {
-					paragraphCount += 1;
-					const prefix = stack[stack.length - 1] || 'div1';
-					const style = extractAttr(attrs, 'style');
-					const endTag = new RegExp(`</${tag}\\s*>`, 'i'); // \s* means zero or more whitespace characters, </${tag} means the closing tag, > means end of tag, /i means case-insensitive
-					const endMatch = endTag.exec(html.substring(tagRegex.lastIndex));
+                } else if (lowerTag === 'p') {
+                    paragraphCount += 1;
+                    const prefix = stack[stack.length - 1] || 'div1';
+                    const style = extractAttr(attrs, 'style');
+                    const endTag = new RegExp(`</${tag}\\s*>`, 'i'); // \s* means zero or more whitespace characters, </${tag} means the closing tag, > means end of tag, /i means case-insensitive
+                    const endMatch = endTag.exec(html.substring(tagRegex.lastIndex));
 
-					let innerText = '';
-					if (endMatch) {
-						const start = tagRegex.lastIndex;
-						const end = start + endMatch.index;
-						innerText = html.substring(start, end).replace(/<[^>]*>/g, '').trim(); // <[^>]*> means any tag, g means global (all occurrences)
-						// move regex index to after closing tag
-						tagRegex.lastIndex = end + endMatch[0].length;
-					}
+                    let innerText = '';
+                    if (endMatch) {
+                        const start = tagRegex.lastIndex;
+                        const end = start + endMatch.index;
+                        innerText = html.substring(start, end).replace(/<[^>]*>/g, '').trim(); // <[^>]*> means any tag, g means global (all occurrences)
+                        // move regex index to after closing tag
+                        tagRegex.lastIndex = end + endMatch[0].length;
+                    }
 
-					const key = prefix + 'textInfo' + paragraphCount + '_' + mainPageLang;
-					const styleKey = 'StyletextInfo' + paragraphCount;
-					result[key] = innerText;
-					result[styleKey] = (style || '').trim();
+                    const key = prefix + 'textInfo' + paragraphCount + '_' + mainPageLang;
+                    const styleKey = 'StyletextInfo' + paragraphCount;
+                    result[key] = innerText;
+                    result[styleKey] = (style || '').trim();
                     
-				} else if (lowerTag === 'img') {
-					imageCount += 1;
+                } else if (lowerTag === 'img') {
+                    imageCount += 1;
 
-					const prefix = stack[stack.length - 1] || 'div1';
-					const style = extractAttr(attrs, 'style');
-					const src = extractAttr(attrs, 'src');
-					const key = prefix + 'image' + imageCount;
-					const styleKey = 'Styleimage' + imageCount;
+                    const prefix = stack[stack.length - 1] || 'div1';
+                    const style = extractAttr(attrs, 'style');
+                    const src = extractAttr(attrs, 'src');
+                    const key = prefix + 'image' + imageCount;
+                    const styleKey = 'Styleimage' + imageCount;
 
-					result[key] = src || '';
-					result[styleKey] = (style || '').trim();
+                    result[key] = src || '';
+                    result[styleKey] = (style || '').trim();
                     
-				}
-			} else {
-				// closing tag
-				if (lowerTag === 'div') {
-					stack.pop();
-				}
-			}
+                }
+            } else {
+                // closing tag
+                if (lowerTag === 'div') {
+                    stack.pop();
+                }
+            }
 
-			lastIndex = tagRegex.lastIndex;
-		}
+            lastIndex = tagRegex.lastIndex;
+        }
 
-		return result;
+        return result;
     }
 
     // === GENERAL ACTIONS (with HTML) ===
@@ -657,12 +659,12 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
         return this.JsonToHtml(json, lang);
     }
 
-    async CreatePageUsingHtml(html, header, mainPageLang = "sv", useStandardMeasurement = "false") {
-        const jsonobj = this.HtmlToJson(html, header, mainPageLang, useStandardMeasurement);
-        return await this.CreatePage(jsonobj, header, mainPageLang, useStandardMeasurement);
+    async CreatePageUsingHtml(html, header, mainPageLang = "sv", escapeUnhandled = false, useStandardMeasurement = false) {
+        const jsonobj = this.HtmlToJson(html, header, mainPageLang, escapeUnhandled, useStandardMeasurement);
+        return await this.CreatePage(jsonobj, header);
     }
 
-    async ReplacePageUsingHtml(pageKey, html, header = null, lang = null) {
+    async ReplacePageUsingHtml(pageKey, html, header = null, lang = null, escapeUnhandled = false) {
         // Ensure pageKey exists in FetchAllPages else return null
         const allPages = await this.FetchAllPages(false); // Fetch all including deleted
         if (!allPages.hasOwnProperty(pageKey)) {
@@ -684,9 +686,10 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
         if (lang === null) {
             lang = allPages[pageKey].mainPageLang || "sv";
         }
-        const useStandardMeasurement = allPages[pageKey].useStandardMeasurement || "false";
+        let useStandardMeasurement = allPages[pageKey].useStandardMeasurement || "false";
+        useStandardMeasurement = (useStandardMeasurement === true || String(useStandardMeasurement).toLowerCase() === "true") ? true : false;
 
-        const jsonobj = this.HtmlToJson(html, header, lang, useStandardMeasurement);
+        const jsonobj = this.HtmlToJson(html, header, lang, escapeUnhandled, useStandardMeasurement);
 
         const newPageKey = await this.CreatePage(jsonobj, header);
 
