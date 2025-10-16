@@ -465,11 +465,46 @@ class WonkyCMSApiWrapper {
     }
 }
 
-
+/*
 html = `<div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:column;"><div style="width:90%;height:220px;display:flex;background-color:#ffffff;flex-flow:column;"><h3 style="font-size:24px;color:#003300;">Mini Koala Info</h3><p style="font-size:16px;color:#000000;">Detta är en liten ruta med en rubrik, text och en bild om koalan.</p><img style="width:80%;height:150px;border-radius:10px;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image"></div></div>`;
 const api = new WonkyCMSApiWrapper("http://192.168.218.186:8080/cmsapi/");
 (async () => {
     console.log("Testing CreatePage...");
     const newPageKey = await api.CreatePage(html, "My Koala Page", "sv");
     console.log("New pageKey:", newPageKey);
-})();
+})();*/
+/*-----------------------------------------*/ 
+
+const viewButton = document.getElementById("top_button_view")
+const editButton = document.getElementById("top_button_edit")
+const createPageButton = document.getElementById("top_button_create_page")
+const defaultCon = document.getElementById("view_container")
+const cons = document.querySelectorAll(".cons")
+
+var buttonsCon = document.getElementsByClassName("topbar_button_container")[0]
+
+
+
+editButton.addEventListener("click", (event) => {
+    cons.forEach((element) => {
+        element.style.display = "none"
+    })
+    document.getElementById("edit_container").style.display = "block"
+})
+viewButton.addEventListener("click", (event) => {
+    cons.forEach((element) => {
+        element.style.display = "none"
+    })
+    document.getElementById("view_container").style.display = "block"
+    
+})
+
+createPageButton.addEventListener("click", (event) => {
+    cons.forEach((element) => {
+        element.style.display = "none"
+    })
+    document.getElementById("create_page_container").style.display = "block"
+    
+})
+
+
