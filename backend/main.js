@@ -129,7 +129,7 @@ app.whenReady().then(() => {
         //console.log(htmlen);
         // const jsonen = api.HtmlToJson(htmlen, "TestPageFromElectron", "en");
         // console.log(jsonen);
-        // const urlen = api.JsonToUrl(jsonen, "en");
+        // const urlen = api.JsonToUrl(jsonen);
         // console.log(urlen);
 
         // Create a new page using html
