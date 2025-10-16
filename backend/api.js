@@ -387,6 +387,54 @@ class WonkyCMSApiWrapper {
         const url = `${this.baseUrl}php/getinfo.php?action=getPageInfo&pageKey=${pageKey}`;
         return await this.getJson(url);
     }
+
+    async GetPreviewOfPages(previewLength = 100, previewLang = "sv"){ //returns {pageKey: { header: "pageHeader", preview: "content from page that is as long as the set limit"}}
+
+        const pages = await this.FetchAllPages();
+        const pagePreviews = {};
+    
+        for (const [pageKey, values] of Object.entries(pages)) {
+            let combinedPreview = "";
+            
+            // Get all matching textInfo keys
+            const matchingKeys = Object.keys(values)
+            .filter(key => key.includes("textInfo") && key.endsWith(`_${previewLang}`));
+            
+            //sort keys for consistent order
+            matchingKeys.sort();
+    
+            for (const key of matchingKeys) {
+                const content = values[key];
+    
+                if (combinedPreview.length < previewLength) {
+                    const remaining = previewLength - combinedPreview.length;
+    
+                    if (content.length <= remaining) {
+                        var trimmedContent = content.trim();
+                        if(trimmedContent.length > 0 && trimmedContent.endsWith(".")){
+                            trimmedContent = trimmedContent.replace(/[.!?]$/, ", ");
+                            combinedPreview += trimmedContent;
+                        }
+
+                    } else {
+                        combinedPreview += content.slice(0, remaining) + "...";
+                        break; // Stop once limit is reached
+                    }
+                } else {
+                    break;
+                }
+            }
+    
+            // 3. Add preview to result, even if it's empty
+            pagePreviews[pageKey] = {
+                header: values["header"] || "",
+                preview: combinedPreview
+            };
+        }
+    
+        console.log(pagePreviews);
+        return pagePreviews;
+    }
 }
 
 // Inheritance class WonkyCMSApiHandler which has some other helper methods added
