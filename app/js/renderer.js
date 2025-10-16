@@ -498,6 +498,7 @@ const editButton = document.getElementById("top_button_edit")
 const createPageButton = document.getElementById("top_button_create_page")
 const defaultCon = document.getElementById("view_container")
 const cons = document.querySelectorAll(".cons")
+const loadButton = document.getElementById("load-previews")
 
 var buttonsCon = document.getElementsByClassName("topbar_button_container")[0]
 
@@ -513,7 +514,7 @@ viewButton.addEventListener("click", (event) => {
     cons.forEach((element) => {
         element.style.display = "none"
     })
-    document.getElementById("view_container").style.display = "block"
+    document.getElementById("view_container").style.display = "flex"
     
 })
 
@@ -525,4 +526,25 @@ createPageButton.addEventListener("click", (event) => {
     
 })
 
+window.addEventListener("DOMContentLoaded", async (e) => {
+    var previewCon = document.getElementById("view_container");
+    var preview = await window.IPC.getPreviews();
+    console.log(preview);
 
+    for(const [key, contentPreview] of Object.entries(preview)){
+        var div = document.createElement("div");
+        div.classList.add("previews")
+
+        var h2 = document.createElement("h2");
+        h2.innerText = contentPreview["header"];
+
+        var p = document.createElement("p");
+        p.innerText = contentPreview["preview"];
+
+        div.appendChild(h2);
+        div.appendChild(p);
+
+        previewCon.appendChild(div);
+    }
+    
+})

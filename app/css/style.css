@@ -55,9 +55,20 @@ button {
 }
 /*------------------------------------------*/
 
+.previews{
+    background-color: red;
+    width: 15rem;
+    height: 15rem;
+    margin: var(--side_margin);
+}
 
-
-
+#view_container{
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}
 
 
 .text_area_container > label {

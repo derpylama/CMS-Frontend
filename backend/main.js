@@ -1,14 +1,26 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron');
 const { WonkyCMSApiHandler } = require('./api.js');
+const path = require("node:path")
+
+var api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
 
 const createWindow = () => {
     const win = new BrowserWindow({
         width: 800,
-        height: 600
+        height: 600,
+        webPreferences: {
+            preload: path.join(__dirname, "preload.js")
+        }
     });
 
     win.loadFile('app/index.html');
 }
+
+
+ipcMain.handle("get-previews", async (event, previews) => {
+    console.log("called")
+    return api.GetPreviewOfPages()
+})
 
 app.whenReady().then(() => {
     createWindow()
@@ -91,9 +103,9 @@ app.whenReady().then(() => {
     // }
     // `;
 
-    const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
+    //const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
     //const api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
-    (async () => {
+    //(async () => {
         // console.log("Testing GetPage...");
         // const res = await api.GetPage("page146");
       
@@ -125,17 +137,17 @@ app.whenReady().then(() => {
 
 
         // Get page page29 with "en"
-        const htmlen = await api.GetPageAsHtml("page29", "en");
+        //const htmlen = await api.GetPageAsHtml("page29", "en");
         //console.log(htmlen);
-        const jsonen = api.HtmlToJson(htmlen, "TestPageFromElectron", "en");
+        //const jsonen = api.HtmlToJson(htmlen, "TestPageFromElectron", "en");
         //console.log(jsonen);
-        const urlen = api.JsonToUrl(jsonen, "en");
-        console.log(urlen);
+        //const urlen = api.JsonToUrl(jsonen, "en");
+        //console.log(urlen);
 
         // Create a new page using html
         // const res = await api.CreatePageUsingHtml(htmlen, "TestPageFromElectron - Created from page29 in English", "en");
         // console.log(res);
     
-    })();
+    //})();
 
 })
