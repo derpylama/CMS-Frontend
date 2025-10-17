@@ -2,6 +2,7 @@
 
 const nf = require('node-fetch');
 const fetch = nf.default || nf;
+const escapeHtml = require('escape-html');
 
 class WonkyCMSApiWrapper {
     constructor(baseUrl = "https://elias.ntigskovde.se/") {
@@ -63,11 +64,25 @@ class WonkyCMSApiWrapper {
     // === JSON FUNCTIONS ===
 
     // Does not return weburl but creation URL parameters as string
-    JsonToUrl(jsonobj, urlencodeBrackets = false, procspaces = true, lang = null) { // If urlencodeBrackets is true, [] becomes %5B%5D else it stays as [], if procspaces is true spaces become %20 else they become +
+    JsonToUrl(jsonobj, htmlencodeContent = true, urlencodeBrackets = false, procspaces = true, lang = null) { // If urlencodeBrackets is true, [] becomes %5B%5D else it stays as [], if procspaces is true spaces become %20 else they become +
         function getCSSValue(style, prop) {
             const regex = new RegExp(`${prop}\\s*:\\s*([^;]+)`); // \s means whitespace, * means zero or more, [^;]+ means one or more characters that are not semicolon
             const match = style.match(regex);
             return match ? match[1].trim() : null;
+        }
+
+        function htmlencodeWithExtras(str, extras = []) {
+            // Perform standard HTML escaping
+            let encoded = escapeHtml(str);
+          
+            // Encode any additional characters from the extras array
+            extras.forEach(ch => {
+              const entity = `&#${ch.charCodeAt(0)};`;
+              const pattern = new RegExp(ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+              encoded = encoded.replace(pattern, entity);
+            });
+          
+            return encoded;
         }
 
         function extractTexts(jsonobj, prefixToDivName, lang = "sv") {
@@ -183,6 +198,9 @@ class WonkyCMSApiWrapper {
 
         // %20 is space, + is space in x-www-form-urlencoded
         const encode = (val) => {
+            if (htmlencodeContent) {
+                val = htmlencodeWithExtras(val, ['"', "'", "<", ">", "=", "[", "]"]);
+            }
             //encodeURIComponent(String(val)).replace(/%20/g, "+");
             return procspaces ? encodeURIComponent(String(val)) : encodeURIComponent(String(val)).replace(/%20/g, "+");
         }
@@ -329,7 +347,11 @@ class WonkyCMSApiWrapper {
     }
 
     // Returns null if a matching header is not found (after creating a page)
-    async CreatePage(jsonobj, header) { // Returns new pageKey (to get new pageKey find matching header in FetchAllPages response)
+    async CreatePage(jsonobj, header = null) { // Returns new pageKey (to get new pageKey find matching header in FetchAllPages response)
+        if (header === null) {
+            header = jsonobj.header;
+        }
+
         if (typeof header === 'undefined' || header === null || header.trim() === '') {
             throw new Error("Header is required");
         }
@@ -434,8 +456,7 @@ class WonkyCMSApiWrapper {
                 preview: combinedPreview
             };
         }
-    
-        console.log(pagePreviews);
+
         return pagePreviews;
     }
 }
@@ -661,7 +682,7 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
 
     async CreatePageUsingHtml(html, header, mainPageLang = "sv", escapeUnhandled = false, useStandardMeasurement = false) {
         const jsonobj = this.HtmlToJson(html, header, mainPageLang, escapeUnhandled, useStandardMeasurement);
-        return await this.CreatePage(jsonobj, header);
+        return await this.CreatePage(jsonobj);
     }
 
     async ReplacePageUsingHtml(pageKey, html, header = null, lang = null, escapeUnhandled = false) {

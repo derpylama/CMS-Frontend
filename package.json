@@ -19,6 +19,7 @@
   "homepage": "https://github.com/derpylama/CMS-Frontend#readme",
   "dependencies": {
     "electron": "^38.2.2",
+    "escape-html": "^1.0.3",
     "node-fetch": "^3.3.2"
   }
 }

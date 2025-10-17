@@ -2,9 +2,9 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const { WonkyCMSApiHandler } = require('./api.js');
 const path = require("node:path")
 
-var api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
+var api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
 
-const createWindow = () => {
+function createWindow () {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
@@ -23,7 +23,7 @@ ipcMain.handle("get-previews", async (event, previews) => {
 })
 
 app.whenReady().then(() => {
-    createWindow()
+    createWindow();
     
     
 //    const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/")
@@ -119,16 +119,16 @@ app.whenReady().then(() => {
         // const res = await api.ReplacePageUsingHtml("page148", html, "TestPageFromElectron x3 - Replaced");
 
         // console.log("Testing JsonToUrl... (with urlencodeBrackets = false)");
-        // const res = api.JsonToUrl(JSON.parse(jsonstr), false);
+        // const res = api.JsonToUrl(JSON.parse(jsonstr), true, false);
 
         // console.log("Testing JsonToUrl... (with urlencodeBrackets = true)");
-        // const res = api.JsonToUrl(JSON.parse(jsonstr), true);
+        // const res = api.JsonToUrl(JSON.parse(jsonstr), true, true);
 
         // console.log("Testing JsonToUrl... (with procspaces = false)");
-        // const res = api.JsonToUrl(JSON.parse(jsonstr), false, false);
+        // const res = api.JsonToUrl(JSON.parse(jsonstr), true, false, false);
 
         // console.log("Testing JsonToUrl... (with procspaces = true)");
-        // const res = api.JsonToUrl(JSON.parse(jsonstr), false, true);
+        // const res = api.JsonToUrl(JSON.parse(jsonstr), true, false, true);
 
         // console.log("Result:", res);
 
@@ -153,15 +153,16 @@ app.whenReady().then(() => {
         // console.log(res);
 
         // Test page with special characters (page50)
-        html = `
-        <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
-            <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
-            <p style="font-size:18px;color:#003300;"><br>ny rad</p>
-        </div>
-        `;
+        // html = `
+        // <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
+        //     <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
+        //     <p style="font-size:18px;color:#003300;"><>&"'.=;#%/\\[]%\`\´</p>
+        // </div>
+        // `;
 
-        const res = api.HtmlToJson(html, "TestPageFromElectron - Special Characters", "sv", false);
-        console.log(res);
+        // const json = api.HtmlToJson(html, "TestPageFromElectron - Special Characters x7", "sv", false);
+        // const res = await api.CreatePage(json);
+        // console.log(res);
     })();
 
 })
