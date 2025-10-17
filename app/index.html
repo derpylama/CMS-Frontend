@@ -36,50 +36,34 @@
 
         <div id="main-container">
             <div id="edit-container" class="cons">
-                <div class="grid-container">
-                    <div class="content-container">
+                <div class="page-create-edit-container">
+                    <div>
                         <h2>Main Container</h2>
-                        <div class="edit-container">
-                            <!-- Nuvarande tillagda inputs för editing.
-                            button_small_[x], select_unit_[x], input_area_[x]-->
+                        <div class="input-container">
+                            <label class="label-header">Header:</label>
+                            <input type="text" placeholder="Koalor" id="input-header" class="input-field">
 
-                            <div>
-                                <div>
-                                    <button id="button-small_1" class="button-select">View</button>
-                                    <button id="button-small_2" class="button-select">Select</button>
-                                    <button id="button-small_3" class="button-select">Delete</button>
-                                    <button id="button-small_4" class="button-select">Get</button>
-                                </div>
+                        </div>
+                        <div>
+                            <button id="button-small_1" class="button-select">View</button>
+                            <button id="button-small_2" class="button-select">Select</button>
+                            <button id="button-small_3" class="button-select">Delete</button>
+                            <button id="button-small_4" class="button-select">Get</button>
+                        </div>
+                        <button id="button-update" class="button-test large-button">&#x2328;Update</button>
 
-                                <div class="input-container">
-                                    <label class="label-header">Header:</label>
-                                    <input type="text" placeholder="Koalor" id="input-header" class="input-field">
-                                    <!--
-                                    <div>
-                                        <label>Standard unit for width:</label>
-                                        <select id="select_unit_1" class="unit_select">
-                                            <option value="px">px</option>
-                                            <option value="rem">rem</option>
-                                            <option value="%">%</option>
-                                            <option value="em">em</option>
-                                        </select>
-                                    </div
-                                    -->
-                                </div>
-
-                                <div>
-                                    <button id="button-update" class="button-test large-button">&#x2328;Update</button>
-                                </div>
-                            </div>
-
-                            <div class="text-edit-container">
-                                <div class="text-area-container">
-                                    <label>HTML:</label>
-                                    <textarea id="input-html-textarea" rows="40", cols="60" spellcheck="false"></textarea>
-                                </div>
-                            </div>
+                    </div>
+                    <div class="edit-container">
+                        <div class="text-area-container">
+                            <label>HTML:</label>
+                            <div class="text-container"><textarea id="input-html-textarea" spellcheck="false"></textarea></div>
+                        </div>
+                        <div class="text-area-container">
+                            <label>Preview:</label>
+                            <div class="text-container"><iframe></iframe></div>
                         </div>
                     </div>
+
                 </div> 
             </div>
 
@@ -87,13 +71,34 @@
                 <div class="previews"></div>
             </div>
             
-            <div id="create-page-container">
-                <div class="content-container">
-                    <div class="edit-container">
+            <div id="create-page-container" class="cons">
+                <div class="page-create-edit-container">
+                    <div>
                         <h2>Create page Container</h2>
+                        <div class="input-container">
+                            <label class="label-header">Header:</label>
+                            <input type="text" placeholder="Koalor" id="input-header" class="input-field">
+                            <!--
+                            <div>
+                                <label>Standard unit for width:</label>
+                                <select id="select_unit_1" class="unit_select">
+                                    <option value="px">px</option>
+                                    <option value="rem">rem</option>
+                                    <option value="%">%</option>
+                                    <option value="em">em</option>
+                                </select>
+                            </div
+                            -->
+                        </div>
+                    </div>
+                    <div class="edit-container">
                         <div class="text-area-container">
                             <label>HTML:</label>
-                            <textarea id="input-html-textarea" rows="40", cols="60" spellcheck="false"></textarea>
+                            <div class="text-container"><textarea id="input-html-textarea" spellcheck="false"></textarea></div>
+                        </div>
+                        <div class="text-area-container">
+                            <label>Preview:</label>
+                            <div class="text-container"><iframe></iframe></div>
                         </div>
                     </div>
                 </div>

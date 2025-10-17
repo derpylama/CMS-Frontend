@@ -12,10 +12,16 @@ html {
     color: var(--standard-font-color);
 
     font-family: var(--standard-font);
+    
 }
 
+/* Rengbåge
+body {
+    background: repeating-conic-gradient(in hsl longer hue, rgb(255, 0, 0), rgb(0, 0, 255), rgb(255,0,0)0.001deg);
+}
+*/
 textarea {
-    border: 4px solid;
+
     resize: none;
     overflow-y: scroll;
     outline: none;
@@ -54,35 +60,50 @@ button {
     cursor: pointer;
 }
 
+iframe {
 
-/* === Specific Classes === */
-
-.side-container {
-    border-right: solid var(--standard-border-width);
-    background-color: var(--light-backdrop-color);
+    background-color: brown;
 }
 
-.content-container {
+textarea {
+
+    background-color: rgba(0, 0, 0, 0);
+}
+textarea, iframe {
+    display: block;
+    width: 100%;
+    max-width: 40rem;
+    height: 40rem;
+}
+
+/* === Specific Classes === */
+.page-create-edit-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--page-gap-width);
     padding: 0 var(--page-gap-width);
     margin: 0 var(--standard-gap-width);
     border: solid var(--standard-border-width);
     background-color: var(--secondary-background);
     border-radius: var(--medium-border-radius);
 }
-
 .edit-container {
     display: flex;
     gap: var(--page-gap-width);
 }
-
-.text-edit-container {
-    display: flex;
-    flex-direction: column;
-}
-
-/* MARK: Use rem? */
 .text-area-container {
-    margin: 18px 0;
+    flex: 1;
+    margin: var(--page-gap-width) 0;
+}
+.text-container {
+    padding: var(--standard-gap-width);
+    border-radius: var(--medium-border-radius);
+    background-color: brown;
+    display: block;
+    border: solid var(--standard-border-width);
+    
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .previews {
@@ -99,7 +120,6 @@ button {
     flex-wrap: wrap;
     justify-content: center;
 }
-
 
 .text-area-container > label {
     display: block;
@@ -126,9 +146,9 @@ button {
     height: 100%;
     border: none;
     
-    padding: 4px;
+    padding: 0.25rem;
 
-    border-width: 5px;
+    border-width: 0.25rem;
 }
 
 
