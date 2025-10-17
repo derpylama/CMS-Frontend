@@ -1,114 +1,128 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <meta
-      http-equiv="X-Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
+    <head>
+        <meta charset="UTF-8" />
 
-    <link rel="stylesheet" type="text/css" href="css/style.css">
-    <link rel="stylesheet" type="text/css" href="css/general.css">
-    <script src="js/renderer.js" defer></script>
-    <title>Hello from Electron renderer!</title>
-  </head>
-  <body>
-    <div class="topbar_container">
-      <a class="topbar_header">Smörig CMS</a>
-      <div class="topbar_button_container">
-        <button id="top_button_edit" class="button button_topbar">Edit</button>
-        <button id="top_button_view" class="button button_topbar">View</button>
-        <button id="top_button_create_page"class="button button_topbar">Create Page</button> 
-      </div>
-     
-    </div>
-    <div id="main_container">
-      <div id="edit_container" class="cons">
-        <div class="grid_container">
-          <div class="side_container">
-            <ul>
-              <li>
-                <a href="https://elias.ntigskovde.se/"><span>BeeStad</span></a>
-                <select>
-                  <option>eng</option>
-                  <option>swe</option>
-                </select>
-              </li>
-              <li>
-                <a href="https://elias.ntigskovde.se/">BEESTAD</a>
-                <select>
-                  <option>eng</option>
-                  <option>swe</option>
-                </select>
-              </li>
-              <li>
+        <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+        <meta
+          http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'"
+        />
+        <meta
+          http-equiv="X-Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'"
+        />
 
-                <a href="https://elias.ntigskovde.se/">BEESTAD</a>
-                <select>
-                  <option>eng</option>
-                  <option>swe</option>
-                </select>
-              </li>
-              <li>
-                <a href="https://elias.ntigskovde.se/">BEESTAD</a>
-                <select>
-                  <option>eng</option>
-                  <option>swe</option>
-                </select>
-              </li>
-              <li>
-                <a href="https://elias.ntigskovde.se/">BEESTAD</a>
-                <select>
-                  <option>eng</option>
-                  <option>swe</option>
-                </select>
-              </li>
-            </ul>
-          </div>
-          <div class="content_container">
-          <h2>Main Container</h2>
-          <div class="edit_container">
-            <!-- Nuvarande tillagda inputs för editing.
-            button_small_[x], select_unit_[x], input_area_[x]-->
-            <div>
-              <div>
-                <button id="button_small_1" class="button_select">View</button>
-                <button id="button_small_2" class="button_select">Select</button>
-                <button id="button_small_3" class="button_select">Delete</button>
-                <button id="button_small_4" class="button_select">Get</button>
-                
-              </div>
-              <div class="input_container">
-                
-                <label class="label_header">Header:</label>
-                <input type="text" placeholder="Koalor" id="input_header" class="input_field">
-                <!--
-                <div>
-                  <label>Standard unit for width:</label>
-                  <select id="select_unit_1" class="unit_select">
-                    <option value="px">px</option>
-                    <option value="rem">rem</option>
-                    <option value="%">%</option>
-                    <option value="em">em</option>
-                  </select>
-                </div
-                -->
-              </div>
-              <div>
-                <button id="button_update" class="button_test large_button">&#x2328;Update</button>
-              </div>
+        <link rel="stylesheet" type="text/css" href="css/vars.css">
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+        <link rel="stylesheet" type="text/css" href="css/general.css">
+
+        <script src="js/renderer.js" defer></script>
+
+        <title>Hello from Electron renderer!</title>
+    </head>
+
+    <body>
+        <div class="topbar-container">
+            <a class="topbar-header">Smörig CMS</a>
+            <div class="topbar-button-container">
+                <button id="top-button-edit" class="topbar-button">Edit</button>
+                <button id="top-button-view" class="topbar-button">View</button>
+                <button id="top-button-create_page"class="topbar-button">Create Page</button> 
             </div>
-            <div class="text_edit_container">
-              <div class="text_area_container">
-                <label>HTML:</label>
-                <textarea id="input_html_textarea" rows="40", cols="60" spellcheck="false"></textarea>
-              </div>
+        </div>
 
+        <div id="main-container">
+            <div id="edit-container" class="cons">
+                <div class="grid-container">
+                    <div class="side-container">
+                        <ul>
+                            <li>
+                                <a href="https://elias.ntigskovde.se/"><span>BeeStad</span></a>
+                                <select>
+                                    <option>eng</option>
+                                    <option>swe</option>
+                                </select>
+                            </li>
+                            <li>
+                                <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+                                <select>
+                                    <option>eng</option>
+                                    <option>swe</option>
+                                </select>
+                            </li>
+                            <li>
+                                <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+                                <select>
+                                    <option>eng</option>
+                                    <option>swe</option>
+                                </select>
+                            </li>
+                            <li>
+                                <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+                                <select>
+                                    <option>eng</option>
+                                    <option>swe</option>
+                                </select>
+                            </li>
+                            <li>
+                                <a href="https://elias.ntigskovde.se/">BEESTAD</a>
+                                <select>
+                                    <option>eng</option>
+                                    <option>swe</option>
+                                </select>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="content-container">
+                        <h2>Main Container</h2>
+                        <div class="edit-container">
+                            <!-- Nuvarande tillagda inputs för editing.
+                            button_small_[x], select_unit_[x], input_area_[x]-->
+
+                            <div>
+                                <div>
+                                    <button id="button-small_1" class="button-select">View</button>
+                                    <button id="button-small_2" class="button-select">Select</button>
+                                    <button id="button-small_3" class="button-select">Delete</button>
+                                    <button id="button-small_4" class="button-select">Get</button>
+                                </div>
+
+                                <div class="input-container">
+                                    <label class="label-header">Header:</label>
+                                    <input type="text" placeholder="Koalor" id="input-header" class="input-field">
+                                    <!--
+                                    <div>
+                                        <label>Standard unit for width:</label>
+                                        <select id="select_unit_1" class="unit_select">
+                                            <option value="px">px</option>
+                                            <option value="rem">rem</option>
+                                            <option value="%">%</option>
+                                            <option value="em">em</option>
+                                        </select>
+                                    </div
+                                    -->
+                                </div>
+
+                                <div>
+                                    <button id="button-update" class="button-test large-button">&#x2328;Update</button>
+                                </div>
+                            </div>
+
+                            <div class="text_edit_container">
+                                <div class="text_area_container">
+                                    <label>HTML:</label>
+                                    <textarea id="input-html-textarea" rows="40", cols="60" spellcheck="false"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+            </div>
+
+            <div id="view-container" class="cons">
+                <h1>TEST--------------------------</h1>
             </div>
           </div>
           </div>
@@ -122,8 +136,14 @@
     </div>
     
 
+            <div id="create-page-container"></div>
 
+            <select id="select-language">
+                <option>eng</option>
+                <option>swe</option>
+            </select>
+        </div>
 
-    <p>👋</p>
-  </body>
+        <p>👋</p>
+    </body>
 </html>

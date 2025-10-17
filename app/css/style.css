@@ -1,14 +1,6 @@
 
-:root {
-    --side_padding: 2rem;
-    --side_margin: 2rem;
-
-}
 
 
-body {
-    font-family: Arial, Helvetica, sans-serif;
-}
 ul {
     margin: 0;
     padding: 0;
@@ -22,35 +14,36 @@ textarea {
     padding: 0;
     margin: 0;
 }
-button {
-    cursor: pointer;
-}
+
 /*-----------------------------*/
 
-.side_container {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-right: solid;
+.side-container {
+    border-right: solid var(--standard-border-width);
+    background-color: var(--light-background-color);
+    
     
 }
 
-.content_container {
-    padding: 0 var(--side_padding);
-    margin: 0 var(--side_margin);
-    border: solid;
+.content-container {
+    padding: 0 var(--page-gap-width);
+    margin: 0 var(--standard-gap-width);
+    border: solid var(--standard-border-width);
+    background-color: var(--lower-background);
+    border-radius: var(--medium-border-radius);
 }
-.edit_container {
+.edit-container {
     display: flex;
-    gap: var(--side_padding);
+    gap: var(--page-gap-width);
 }
 
-.text_edit_container {
+.text-edit-container {
     display: flex;
     flex-direction: column;
 }
 
 
 
-.text_area_container {
+.text-area-container {
     margin: 18px 0;
 }
 /*------------------------------------------*/
@@ -71,7 +64,7 @@ button {
 }
 
 
-.text_area_container > label {
+.text-area-container > label {
     display: block;
 }
 
@@ -82,20 +75,20 @@ button {
 
 
 
-.input_field {
+.input-field {
     margin: 0.2rem 0 1rem;
     width: 15rem;
 }
-.unit_select {
+.unit-select {
     width: 4rem;
     margin-bottom: 0.6rem;
 }
-.input_container {
+.input-container {
     display: flex;
     flex-direction: column;
 }
 
-.button_test {
+.button-test {
     border: solid 4px rgb(0, 200, 0);
     color: rgb(0, 200, 0);
 
@@ -109,22 +102,22 @@ button {
 
 
 
-.button_select {
+.button-select {
     font-size: 1rem;
     border: solid 1.2px rgba(0, 0, 0, 0.6);
     padding: 0.5rem 0.6rem 0.4rem;
     border-radius: 0.4rem;
 
 }
-.button_select:hover {
+.button-select:hover {
     background-color: rgba(0, 0, 0, 0.2);
 }
-.button_select:active {
+.button-select:active {
     background-color: rgba(0, 0, 0, 0.36);
     
 }
 
-.button_test:active {
+.button-test:active {
     transform: translateY(8px);
 
     box-shadow: 0 6px rgba(0, 127, 0, 1),0 14px rgba(0, 0, 0, 0.4);
@@ -132,18 +125,18 @@ button {
     color: rgba(100, 200, 0, 1);
 
 }
-.button_test:hover {
+.button-test:hover {
     border-color: rgba(0, 255, 0, 0.546);
 }
 
 
-.large_button {
+.large-button {
     padding: 15px;
     border-radius: 10px;
     font-size: 1.5rem;
 }
 
-.small_button {
+.small-button {
     padding: 8px;
     border-radius: 4px;
     font-size: 1rem;

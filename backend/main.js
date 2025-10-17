@@ -137,17 +137,31 @@ app.whenReady().then(() => {
 
 
         // Get page page29 with "en"
-        //const htmlen = await api.GetPageAsHtml("page29", "en");
+        // const htmlen = await api.GetPageAsHtml("page29", "en");
         //console.log(htmlen);
-        //const jsonen = api.HtmlToJson(htmlen, "TestPageFromElectron", "en");
-        //console.log(jsonen);
-        //const urlen = api.JsonToUrl(jsonen, "en");
-        //console.log(urlen);
+        // const jsonen = api.HtmlToJson(htmlen, "TestPageFromElectron", "en");
+        // console.log(jsonen);
+        // const urlen = api.JsonToUrl(jsonen);
+        // console.log(urlen);
 
         // Create a new page using html
-        // const res = await api.CreatePageUsingHtml(htmlen, "TestPageFromElectron - Created from page29 in English", "en");
+        // const res = await api.CreatePageUsingHtml(htmlen, "TestPageFromElectron - Created from page29 in English x3", "en");
         // console.log(res);
-    
-    //})();
+
+        // Replace an existing page using html (english page32)
+        // const res = await api.ReplacePageUsingHtml("page35", html, "TestPageFromElectron - REPLACED x3", "sv");
+        // console.log(res);
+
+        // Test page with special characters (page50)
+        html = `
+        <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
+            <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
+            <p style="font-size:18px;color:#003300;"><br>ny rad</p>
+        </div>
+        `;
+
+        const res = api.HtmlToJson(html, "TestPageFromElectron - Special Characters", "sv", false);
+        console.log(res);
+    })();
 
 })

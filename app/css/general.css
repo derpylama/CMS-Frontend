@@ -1,42 +1,62 @@
-:root {
-    --side_padding: 2rem;
-    --side_margin: 2rem;
 
-}
 body {
+    background-color: var(--standard-background-color);
+    color: var(--standard-font-color);
+
+    font-family: Arial, Helvetica, sans-serif;
     margin: 0;
+    
+}
+button {
+    cursor: pointer;
 }
 
 
 
-.selected_button {
-    background-color: fuchsia;
-}
 
 
 
-.topbar_container {
+.topbar-container {
+    border-bottom: solid var(--standard-border-width);
+    margin-bottom: var(--standard-gap-width);
+
     width: 100%;
-    height: 60px;
-    background-color: rgba(0, 0, 0, 0.5);
+    height: 4rem;
+
+    background-color: var(--medium-background-color);
 
     display:flex;
     flex-direction: row;
-    border-bottom: solid;
-    margin-bottom: 2rem;
+    
 }
-.topbar_header {
+
+.topbar-button {
+    font-size: 1rem;
+    width: 8rem;
+    height: 100%;
+    border: none;
+    
+    
+    padding: 4px;
+
+    border-width: 5px;
+}
+
+
+
+
+.topbar-header {
     display: flex;
     align-items: center;
     padding: 0 2rem;
     font-size: 2rem;
 }
 
-.topbar_button_container {
+.topbar-button-container {
     height: 100%;
     display: inline-flex;
-    gap: 0.5rem;
-    background-color: rgba(0, 0, 0, 0.653);
+    gap: var(--standard-border-width);
+    background-color: var(--standard-font-color);
 }
 
 .button {
@@ -54,14 +74,6 @@ body {
 }
 
 
-.button_topbar {
-    border: none;
-    height: 100%;
-    width: 100px;
-    padding: 4px;
-
-    border-width: 5px;
-}
 
 
 
@@ -69,8 +81,7 @@ body {
 
 
 
-
-.grid_container {
+.grid-container {
     display: grid;
     grid-template-columns: 20rem auto;
 }
