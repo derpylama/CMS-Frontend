@@ -86,7 +86,7 @@ button {
 }
 
 .previews {
-    background-color: red;
+    background-color: var(--preview-card-background);
     width: 15rem;
     height: 15rem;
     margin: var(--page-gap-width);

@@ -18,7 +18,6 @@ function createWindow () {
 
 
 ipcMain.handle("get-previews", async (event, previews) => {
-    console.log("called")
     return api.GetPreviewOfPages()
 })
 
