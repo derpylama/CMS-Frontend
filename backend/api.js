@@ -54,7 +54,7 @@ class WonkyCMSApiWrapper {
     // If onError incase of parse error of JSON it calls that callback instead, else it throws
     async getJson(url, timeoutMs, onError = null) {
         const text = await this.getText(url, timeoutMs);
-
+        
         try {
             return JSON.parse(text);
         } catch (e) {
