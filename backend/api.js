@@ -4,6 +4,30 @@ const nf = require('node-fetch');
 const fetch = nf.default || nf;
 const escapeHtml = require('escape-html');
 
+class ApiError extends Error {
+    constructor(message = "Failed to parse JSON") {
+        super(message); // call the parent constructor
+        this.name = this.constructor.name; // set the error name
+        Error.captureStackTrace?.(this, this.constructor); // optional, for cleaner stack traces
+    }
+}
+
+class PageNotFoundError extends ApiError {
+    constructor(message = "Page not found") {
+        super(message); // call the parent constructor
+        this.name = this.constructor.name; // set the error name
+        Error.captureStackTrace?.(this, this.constructor); // optional, for cleaner stack traces
+    }
+}
+
+class PageDeletedError extends ApiError {
+    constructor(message = "Page is deleted") {
+        super(message); // call the parent constructor
+        this.name = this.constructor.name; // set the error name
+        Error.captureStackTrace?.(this, this.constructor); // optional, for cleaner stack traces
+    }
+} 
+
 class WonkyCMSApiWrapper {
     constructor(baseUrl = "https://elias.ntigskovde.se/") {
         this.indexUrl = baseUrl + "index.php";
@@ -18,22 +42,26 @@ class WonkyCMSApiWrapper {
         return await fetch(url, { method: 'GET', timeout: timeoutMs || this.defaultTimeoutMs })
             .then(res => {
                 if (!res.ok) {
-                    throw new Error(`HTTP ${res.status} when GET ${url}`);
+                    throw new ApiError(`HTTP ${res.status} when GET ${url}`);
                 }
                 return res.text();
             })
             .catch(err => {
-                throw new Error(`Fetch error: ${err.message}`);
+                throw new ApiError(`Fetch error: ${err.message}`);
             });
     }
 
-    async getJson(url, timeoutMs) {
+    // If onError incase of parse error of JSON it calls that callback instead, else it throws
+    async getJson(url, timeoutMs, onError = null) {
         const text = await this.getText(url, timeoutMs);
 
         try {
             return JSON.parse(text);
         } catch (e) {
-            throw new Error('Failed to parse JSON response');
+            if (onError !== null) {
+                return onError ? onError(text) : null;
+            }
+            throw new ApiError('Failed to parse JSON response');
         }
     }
 
@@ -52,12 +80,12 @@ class WonkyCMSApiWrapper {
         })
             .then(res => {
                 if (!res.ok) {
-                    throw new Error(`HTTP ${res.status} when POST ${url}`);
+                    throw new ApiError(`HTTP ${res.status} when POST ${url}`);
                 }
                 return res.text();
             })
             .catch(err => {
-                throw new Error(`Fetch error: ${err.message}`);
+                throw new ApiError(`Fetch error: ${err.message}`);
             });
     }
 
@@ -326,12 +354,22 @@ class WonkyCMSApiWrapper {
             return jsonobj;
 
         } catch (e) {
-            throw new Error('Failed to parse pages JSON');
+            throw new ApiError('Failed to parse pages JSON');
         }
 
     }
 
-    async RemovePage(pageKey, validate = false) {
+    async RemovePage(pageKey, validate = true) {
+        // Ensure pageKey exists in FetchAllPages else throw
+        const allPages = await this.FetchAllPages(false); // Fetch all including deleted
+        if (!allPages.hasOwnProperty(pageKey)) {
+            throw new PageNotFoundError();
+        }
+        // Check if page is already deleted
+        if (allPages[pageKey].hasOwnProperty("deleted")) {
+            throw new PageDeletedError("Page is already deleted");
+        }
+
         await this.getText(`${this.baseUrl}php/deletepage.php?action=deletePage&pageKey=${pageKey}`);
 
         if (validate) {
@@ -340,7 +378,7 @@ class WonkyCMSApiWrapper {
             if (allPages.hasOwnProperty(pageKey)) {
                 // If the page was deleted allPages[pageKey] would be { "deleted": 'true' }
                 if (!allPages[pageKey].hasOwnProperty("deleted")) {
-                    throw new Error("Failed to delete page, it still exists");
+                    throw new ApiError("Failed to delete page, it still exists");
                 }
             }
         }
@@ -353,14 +391,14 @@ class WonkyCMSApiWrapper {
         }
 
         if (typeof header === 'undefined' || header === null || header.trim() === '') {
-            throw new Error("Header is required");
+            throw new ApiError("Header is required");
         }
 
         // Ensure header is unique in FetchAllPages else throw
         let allPages = await this.FetchAllPages();
         for (const key in allPages) {
             if (allPages[key].header === header) {
-                throw new Error("Header must be unique");
+                throw new ApiError("Header must be unique");
             }
         }
 
@@ -385,12 +423,12 @@ class WonkyCMSApiWrapper {
         // Ensure pageKey exists in FetchAllPages else return null
         const allPages = await this.FetchAllPages(false); // Fetch all including deleted
         if (!allPages.hasOwnProperty(pageKey)) {
-            throw new Error("Page key does not exist");
+            throw new PageNotFoundError();
         }
 
         // Check if page is deleted
         if (allPages[pageKey].hasOwnProperty("deleted")) {
-            throw new Error("Cannot replace a deleted page");
+            throw new PageDeletedError("Cannot replace a deleted page");
         }
 
         // Delete the page
@@ -410,7 +448,15 @@ class WonkyCMSApiWrapper {
 
     async GetPage(pageKey) {
         const url = `${this.baseUrl}php/getinfo.php?action=getPageInfo&pageKey=${pageKey}`;
-        return await this.getJson(url);
+
+        return await this.getJson(url, this.defaultTimeoutMs, (text) => {
+            // Does text include `<b>Warning</b>:  Undefined array key "<pageKey>"` if so throw Page not found else throw new Error('Failed to parse JSON response');
+            if (text.includes("<b>Warning</b>:  Undefined array key \"" + pageKey + "\"")) {
+                throw new PageNotFoundError();
+            } else {
+                throw new ApiError('Failed to parse JSON response');
+            }
+        });
     }
 
     async GetPreviewOfPages(previewLength = 100, previewLang = "sv"){ //returns {pageKey: { header: "pageHeader", preview: "content from page that is as long as the set limit"}}
@@ -561,7 +607,7 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
 
         // Ensure header is defined else throw
         if (typeof header === 'undefined' || header === null || header.trim() === '') {
-            throw new Error("Header is required");
+            throw new ApiError("Header is required");
         }
 
         // Generate JSON from HTML
@@ -689,12 +735,12 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
         // Ensure pageKey exists in FetchAllPages else return null
         const allPages = await this.FetchAllPages(false); // Fetch all including deleted
         if (!allPages.hasOwnProperty(pageKey)) {
-            throw new Error("Page key does not exist");
+            throw new PageNotFoundError();
         }
         
         // Check if page is deleted
         if (allPages[pageKey].hasOwnProperty("deleted")) {
-            throw new Error("Cannot replace a deleted page");
+            throw new PageDeletedError("Cannot replace a deleted page");
         }
 
         // Delete the page
