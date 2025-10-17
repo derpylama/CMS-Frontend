@@ -1,9 +1,11 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { WonkyCMSApiHandler } = require('./api.js');
-const path = require("node:path");
-const { isContext } = require('node:vm');
+const { ConfigManager } = require('./config.js');
+const path = require("node:path")
 
-var api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
+const config = new ConfigManager(false);
+
+const api = new WonkyCMSApiHandler(config.get("api"));
 
 function createWindow () {
     const win = new BrowserWindow({
@@ -44,9 +46,6 @@ ipcMain.handle("remove-page", async (event, pageKey, validate) => {
 
 app.whenReady().then(() => {
     createWindow();
-    
-    
-//    const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/")
 //
 //    api.GetPreviewOfPages();
 //
@@ -127,7 +126,8 @@ app.whenReady().then(() => {
     //const api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
     (async () => {
         // console.log("Testing GetPage...");
-        // const res = await api.GetPage("page146");
+        // const res = await api.GetPage("page158");
+        // console.log(res);
       
         // console.log("Testing RemovePage...");
         // const res = await api.RemovePage("page146");
