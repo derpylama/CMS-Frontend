@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { WonkyCMSApiHandler } = require('./api.js');
+const { ConfigManager } = require('./config.js');
 const path = require("node:path")
 
 var api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
@@ -24,8 +25,11 @@ ipcMain.handle("get-previews", async (event, previews) => {
 app.whenReady().then(() => {
     createWindow();
     
+    const config = new ConfigManager(false);
     
-//    const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/")
+    const api = new WonkyCMSApiHandler(config.get("api"));
+
+    console.log(config.getAll());
 //
 //    api.GetPreviewOfPages();
 //
