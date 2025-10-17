@@ -5,7 +5,7 @@ const fetch = nf.default || nf;
 const escapeHtml = require('escape-html');
 
 class ApiError extends Error {
-    constructor(message = "Failed to parse JSON") {
+    constructor(message = "API Error") {
         super(message); // call the parent constructor
         this.name = this.constructor.name; // set the error name
         Error.captureStackTrace?.(this, this.constructor); // optional, for cleaner stack traces
