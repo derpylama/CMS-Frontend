@@ -45,7 +45,7 @@ createPageButton.addEventListener("click", (event) => {
 })
 
 window.addEventListener("DOMContentLoaded", async (e) => {
-    var previewCon = document.getElementById("view_container");
+    var previewCon = document.getElementById("view-container");
     var preview = await window.IPC.getPreviews();
     console.log(preview);
 

@@ -89,7 +89,7 @@ button {
     background-color: red;
     width: 15rem;
     height: 15rem;
-    margin: var(--side-margin);
+    margin: var(--page-gap-width);
 }
 
 #view-container {
