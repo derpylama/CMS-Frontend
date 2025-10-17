@@ -5,17 +5,15 @@ const defaultCon = document.getElementById("view-container")
 const cons = document.querySelectorAll(".cons")
 const loadButton = document.getElementById("load-previews")
 
-var buttonsCon = document.getElementsByClassName("topbar-button-container")[0]
-
 function resetButtons() {
-    [viewButton, editButton, createPageButton].forEach(button =>{
-        button.style.borderBottom = "none"
-        button.style.color = ""
+    [viewButton, editButton, createPageButton].forEach(button => {
+        button.classList.remove("button-highlighted")
     });
 }
+
 function selectButton(button) {
-    button.style.borderBottom = "solid var(--highlighted-border-width)"
-    button.style.color = "var(--highlighted-color)"
+    console.log("Selecting button:", button);
+    button.classList.add("button-highlighted")
 }
 
 editButton.addEventListener("click", (event) => {
@@ -26,15 +24,14 @@ editButton.addEventListener("click", (event) => {
     resetButtons()
     selectButton(document.getElementById("top-button-edit"))
 })
+
 viewButton.addEventListener("click", (event) => {
     cons.forEach((element) => {
         element.style.display = "none"
     })
     document.getElementById("view-container").style.display = "flex"
     resetButtons()
-    selectButton(document.getElementById("top-buttonview"))
-
-    
+    selectButton(document.getElementById("top-button-view")) 
 })
 
 createPageButton.addEventListener("click", (event) => {
