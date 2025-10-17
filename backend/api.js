@@ -29,7 +29,7 @@ class WonkyCMSApiWrapper {
 
     async getJson(url, timeoutMs) {
         const text = await this.getText(url, timeoutMs);
-
+        
         try {
             return JSON.parse(text);
         } catch (e) {

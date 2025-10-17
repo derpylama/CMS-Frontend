@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { WonkyCMSApiHandler } = require('./api.js');
-const path = require("node:path")
+const path = require("node:path");
+const { isContext } = require('node:vm');
 
 var api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
 
@@ -18,8 +19,28 @@ function createWindow () {
 
 
 ipcMain.handle("get-previews", async (event, previews) => {
-    return api.GetPreviewOfPages()
-})
+    return await api.GetPreviewOfPages();
+});
+
+ipcMain.handle("get-page-as-html", async (event, pageKey, lang) => {
+    return await api.GetPageAsHtml(pageKey, lang);
+});
+
+ipcMain.handle("create-page-using-html", async (event, html, header, mainPageLang) => {
+    return await api.CreatePageUsingHtml(html, header, mainPageLang);
+});
+
+ipcMain.handle("replace-page-using-html", async (event, pageKey, html, header, lang) => {
+    return await api.ReplacePageUsingHtml(pageKey, html, header);
+});
+
+ipcMain.handle("get-all-pages-with-html", async (event, lang) => {
+    return await api.GetAllPagesWithHtml(lang);
+});
+
+ipcMain.handle("remove-page", async (event, pageKey, validate) => {
+    return await api.RemovePage(pageKey, validate);
+});
 
 app.whenReady().then(() => {
     createWindow();
