@@ -85,6 +85,22 @@ button {
     margin: 18px 0;
 }
 
+.previews {
+    background-color: red;
+    width: 15rem;
+    height: 15rem;
+    margin: var(--side-margin);
+}
+
+#view-container {
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+
 .text-area-container > label {
     display: block;
 }

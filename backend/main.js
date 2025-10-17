@@ -1,14 +1,26 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron');
 const { WonkyCMSApiHandler } = require('./api.js');
+const path = require("node:path")
+
+var api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
 
 const createWindow = () => {
     const win = new BrowserWindow({
         width: 800,
-        height: 600
+        height: 600,
+        webPreferences: {
+            preload: path.join(__dirname, "preload.js")
+        }
     });
 
     win.loadFile('app/index.html');
 }
+
+
+ipcMain.handle("get-previews", async (event, previews) => {
+    console.log("called")
+    return api.GetPreviewOfPages()
+})
 
 app.whenReady().then(() => {
     createWindow()
@@ -91,7 +103,7 @@ app.whenReady().then(() => {
     // }
     // `;
 
-    // const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
+    //const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
     //const api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
     (async () => {
         // console.log("Testing GetPage...");
@@ -139,6 +151,17 @@ app.whenReady().then(() => {
         // Replace an existing page using html (english page32)
         // const res = await api.ReplacePageUsingHtml("page35", html, "TestPageFromElectron - REPLACED x3", "sv");
         // console.log(res);
+
+        // Test page with special characters (page50)
+        html = `
+        <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
+            <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
+            <p style="font-size:18px;color:#003300;"><br>ny rad</p>
+        </div>
+        `;
+
+        const res = api.HtmlToJson(html, "TestPageFromElectron - Special Characters", "sv", false);
+        console.log(res);
     })();
 
 })
