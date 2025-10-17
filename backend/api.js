@@ -588,6 +588,7 @@ class WonkyCMSApiHandler extends WonkyCMSApiWrapper {
     }
 
     // MARK: The only allowed html we currently know is: <div>, <h3>, <p>, <img>
+    // MARK: escapeUnhandled is not implemented
     HtmlToJson(html, header, mainPageLang = "sv", escapeUnhandled = false, useStandardMeasurement = false) { // Takes HTML and returns {"header": "<header>", ...data...} (no DOM)
 
         const nestedDivCounters = new Map(); // per-prefix counters

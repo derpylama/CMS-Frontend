@@ -1,6 +1,6 @@
 // MARK: If we move out HTML->JSON JSON->HTML to frontend this file should move to
 
-const { WonkyCMSApiHandler } = require('./api.js');
+const { WonkyCMSApiHandlerFrontend } = require("./apifrontend");
 
 /*
 ESES Extension
@@ -139,7 +139,8 @@ ESES Extension
 
 class ESESApiExtender {
     constructor(baseUrl) {
-        this.api = new WonkyCMSApiHandler(baseUrl);
+        this.api = new WonkyCMSApiHandlerFrontend(baseUrl);
+        this.esesVersion = "1";
 
         this.elementsMap = {
             "header": [
@@ -159,6 +160,26 @@ class ESESApiExtender {
         }
     }
 
+    esesJsonToMetaString(jsonobj) {
+        // Takes jsonobj => jsonstr => base64str => "ESES{v}:" + base64str
+        const jsonstr = JSON.stringify(jsonobj);
+        const base64str = Buffer.from(jsonstr).toString('base64');
+        return "ESES" + this.esesVersion + ":" + base64str;
+    }
+
+    metaStringToEsesJson(metastr) {
+        // Takes "ESES{v}" + base64str => base64str => jsonstr => jsonobj
+        const esesPrefix = "ESES" + this.esesVersion + ":";
+        if (!metastr.startsWith(esesPrefix)) {
+            throw new Error("Invalid ESES meta string");
+        }
+
+        const base64str = metastr.slice(esesPrefix.length);
+
+        const jsonstr = Buffer.from(base64str, 'base64').toString('utf-8');
+
+        return JSON.parse(jsonstr);
+    }
     
     async RemovePage(pageKey, validate = false) {
         return await this.api.RemovePage(pageKey, validate);

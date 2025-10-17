@@ -1,3 +1,26 @@
+class ApiError extends Error {
+    constructor(message = "API Error") {
+        super(message); // call the parent constructor
+        this.name = this.constructor.name; // set the error name
+        Error.captureStackTrace?.(this, this.constructor); // optional, for cleaner stack traces
+    }
+}
+
+class PageNotFoundError extends ApiError {
+    constructor(message = "Page not found") {
+        super(message); // call the parent constructor
+        this.name = this.constructor.name; // set the error name
+        Error.captureStackTrace?.(this, this.constructor); // optional, for cleaner stack traces
+    }
+}
+
+class PageDeletedError extends ApiError {
+    constructor(message = "Page is deleted") {
+        super(message); // call the parent constructor
+        this.name = this.constructor.name; // set the error name
+        Error.captureStackTrace?.(this, this.constructor); // optional, for cleaner stack traces
+    }
+} 
 
 class WonkyCMSApiHandlerFrontend {
     constructor(baseUrl) {
