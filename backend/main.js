@@ -3,7 +3,9 @@ const { WonkyCMSApiHandler } = require('./api.js');
 const { ConfigManager } = require('./config.js');
 const path = require("node:path")
 
-var api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
+const config = new ConfigManager(false);
+
+const api = new WonkyCMSApiHandler(config.get("api"));
 
 function createWindow () {
     const win = new BrowserWindow({
@@ -24,10 +26,6 @@ ipcMain.handle("get-previews", async (event, previews) => {
 
 app.whenReady().then(() => {
     createWindow();
-    
-    const config = new ConfigManager(false);
-    
-    const api = new WonkyCMSApiHandler(config.get("api"));
 
     console.log(config.getAll());
 //
