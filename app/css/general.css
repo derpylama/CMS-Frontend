@@ -17,7 +17,7 @@
 
 .grid-container {
     display: grid;
-    grid-template-columns: 20rem auto;
+    grid-template-columns: auto;
 }
 
 
