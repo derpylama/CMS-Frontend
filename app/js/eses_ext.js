@@ -1,7 +1,5 @@
 // MARK: If we move out HTML->JSON JSON->HTML to frontend this file should move to
 
-const { WonkyCMSApiHandlerFrontend } = require("./apifrontend");
-
 /*
 ESES Extension
 
@@ -192,5 +190,3 @@ class ESESApiExtender {
     //   async ReplacePageUsingHtml(pageKey, html, header = null)
     //   async GetAllPagesWithHtml(lang = "sv")
 }
-
-module.exports = { ESESApiExtender };
