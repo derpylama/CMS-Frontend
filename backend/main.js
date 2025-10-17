@@ -26,8 +26,6 @@ ipcMain.handle("get-previews", async (event, previews) => {
 
 app.whenReady().then(() => {
     createWindow();
-
-    console.log(config.getAll());
 //
 //    api.GetPreviewOfPages();
 //
@@ -107,9 +105,9 @@ app.whenReady().then(() => {
     //const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
     //const api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
     (async () => {
-        console.log("Testing GetPage...");
-        const res = await api.GetPage("page158");
-        console.log(res);
+        // console.log("Testing GetPage...");
+        // const res = await api.GetPage("page158");
+        // console.log(res);
       
         // console.log("Testing RemovePage...");
         // const res = await api.RemovePage("page146");
