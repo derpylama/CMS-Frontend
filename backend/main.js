@@ -105,7 +105,7 @@ app.whenReady().then(() => {
 
     //const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
     //const api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
-    //(async () => {
+    (async () => {
         // console.log("Testing GetPage...");
         // const res = await api.GetPage("page146");
       
