@@ -48,10 +48,9 @@ createPageButton.addEventListener("click", (event) => {
 
 window.addEventListener("DOMContentLoaded", async (e) => {
     var previewCon = document.getElementById("view-container");
-    var preview = await window.IPC.getPreviews();
-    console.log(preview);
+    var preview = await frapi.GetPreviewOfPages();
 
-    for(const [key, contentPreview] of Object.entries(preview)){
+    for (const [key, contentPreview] of Object.entries(preview)) {
         var div = document.createElement("div");
         div.classList.add("previews")
 
@@ -66,8 +65,6 @@ window.addEventListener("DOMContentLoaded", async (e) => {
 
         previewCon.appendChild(div);
     }
-
-    // api.GetPreviewOfPages();
 
     // html = `
     // <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
@@ -142,54 +139,52 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     // }
     // `;
 
-    //const api = new WonkyCMSApiHandler("http://192.168.218.186:8080/cmsapi/");
-    //const api = new WonkyCMSApiHandler("https://elias.ntigskovde.se/");
     (async () => {
         console.log("Testing GetPage...");
         const res = await frapi.GetPage("page1");
         console.log(res);
       
         // console.log("Testing RemovePage...");
-        // const res = await api.RemovePage("page146");
+        // const res = await frapi.RemovePage("page146");
       
         // console.log("Testing CreatePage...");
-        // const res = await api.CreatePageUsingHtml(html, "TestPageFromElectron x3");
+        // const res = await frapi.CreatePageUsingHtml(html, "TestPageFromElectron x3");
 
         // console.log("Testing ReplacePage...");
-        // const res = await api.ReplacePageUsingHtml("page148", html, "TestPageFromElectron x3 - Replaced");
+        // const res = await frapi.ReplacePageUsingHtml("page148", html, "TestPageFromElectron x3 - Replaced");
 
         // console.log("Testing JsonToUrl... (with urlencodeBrackets = false)");
-        // const res = api.JsonToUrl(JSON.parse(jsonstr), true, false);
+        // const res = frapi.JsonToUrl(JSON.parse(jsonstr), true, false);
 
         // console.log("Testing JsonToUrl... (with urlencodeBrackets = true)");
-        // const res = api.JsonToUrl(JSON.parse(jsonstr), true, true);
+        // const res = frapi.JsonToUrl(JSON.parse(jsonstr), true, true);
 
         // console.log("Testing JsonToUrl... (with procspaces = false)");
-        // const res = api.JsonToUrl(JSON.parse(jsonstr), true, false, false);
+        // const res = frapi.JsonToUrl(JSON.parse(jsonstr), true, false, false);
 
         // console.log("Testing JsonToUrl... (with procspaces = true)");
-        // const res = api.JsonToUrl(JSON.parse(jsonstr), true, false, true);
+        // const res = frapi.JsonToUrl(JSON.parse(jsonstr), true, false, true);
 
         // console.log("Result:", res);
 
-        // const html = api.JsonToHTML(res);
+        // const html = frapi.JsonToHTML(res);
         // console.log(html);
 
 
         // Get page page29 with "en"
-        // const htmlen = await api.GetPageAsHtml("page29", "en");
+        // const htmlen = await frapi.GetPageAsHtml("page29", "en");
         //console.log(htmlen);
-        // const jsonen = api.HtmlToJson(htmlen, "TestPageFromElectron", "en");
+        // const jsonen = frapi.HtmlToJson(htmlen, "TestPageFromElectron", "en");
         // console.log(jsonen);
-        // const urlen = api.JsonToUrl(jsonen);
+        // const urlen = frapi.JsonToUrl(jsonen);
         // console.log(urlen);
 
         // Create a new page using html
-        // const res = await api.CreatePageUsingHtml(htmlen, "TestPageFromElectron - Created from page29 in English x3", "en");
+        // const res = await frapi.CreatePageUsingHtml(htmlen, "TestPageFromElectron - Created from page29 in English x3", "en");
         // console.log(res);
 
         // Replace an existing page using html (english page32)
-        // const res = await api.ReplacePageUsingHtml("page35", html, "TestPageFromElectron - REPLACED x3", "sv");
+        // const res = await frapi.ReplacePageUsingHtml("page35", html, "TestPageFromElectron - REPLACED x3", "sv");
         // console.log(res);
 
         // Test page with special characters (page50)
@@ -200,8 +195,8 @@ window.addEventListener("DOMContentLoaded", async (e) => {
         // </div>
         // `;
 
-        // const json = api.HtmlToJson(html, "TestPageFromElectron - Special Characters x7", "sv", false);
-        // const res = await api.CreatePage(json);
+        // const json = frapi.HtmlToJson(html, "TestPageFromElectron - Special Characters x7", "sv", false);
+        // const res = await frapi.CreatePage(json);
         // console.log(res);
     })();
 

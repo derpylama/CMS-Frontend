@@ -1,12 +1,10 @@
-// MARK: If we move out HTML->JSON JSON->HTML to frontend this file should move to
-
 /*
 ESES Extension
 
-  ESES Defines a way to encode arbitrary HTML into the Wonky API format while maintaining readability for non ESES aware clients to the extent possible.
+  ESES Defines a way to encode arbitrary HTML into the restricted CMS-API format while maintaining readability for non ESES aware clients to the extent possible.
 
-  The extension builds on having the a `<p style="display: none;">` tag containing ESES mapping data, this one maps WonkyCMS-hiarchy-keys to the element extended data.
-  This is since the Wonky API format only allows:
+  The extension builds on having a `<p style="display: none;">` tag containing ESES mapping data, this one maps element-hiarchy-keys to the elements extended data.
+  This is since the CMS API format only allows:
     HTML Elements:
       - p
       - h3
@@ -45,13 +43,14 @@ ESES Extension
       - padding-right
       - background-image
 
-  The goal of ESES is to map additional HTML element types, their additional properties and additional-content as well as their non-supported CSS properties to the WonkyCMS API format.
-    This means if an element is of a type not supported we can represent it as a div, p or h3 then map that element's hiarchy key to the original element type and its properties.
-    And if an element is supported but has additional properties or additional-content we can do the same.
-    And if an element has CSS properties not supported we can also map those.
+    And div is the only element who can have child elements, p and h3 must only have text content.
 
-    The ESES mapping data must be stored in text and thus is base64 encoded JSON. With the prefix "ESES1:" (for v1 of the ESES extension)
-      since the element has `display: none` we hint to other clients that this is not meant to be displayed.
+  The goal of ESES is to map additional HTML element types, their properties (except img src), content for non text elements aswell as any CSS properties not supported by the CMS format.
+    This means if an element is of a type not supported we can represent it as a div, p or h3 then map that element's hiarchy key to the original element type and its properties.
+    Elements properties and css-properties that are supported by the CMS format should be kept inside the html however any non supported properties should be stored in the ESES mapping data.
+
+    The ESES mapping data must be html+ini safe text and is thus stored as base64 incoded JSON. With the prefix "ESES1:" (for v1 of the ESES extension)
+      since the mapping element has `display: none` we hint to other clients that this is not meant to be displayed.
       
       The JSON structure is: 
         {
@@ -65,8 +64,7 @@ ESES Extension
                     "<css-property-name>": "<css-property-value>",
                     ...
                 },
-                "content": "<non-text-content-base64-encoded>",
-                "represented": bool // true for any element that is not in the NotRepresented category, false for those in that category
+                "content": "<non-text-content>"
             },
             ...
         }
@@ -178,9 +176,13 @@ class ESESApiExtender {
 
         return JSON.parse(jsonstr);
     }
-    
-    async RemovePage(pageKey, validate = false) {
-        return await this.api.RemovePage(pageKey, validate);
+
+    FromFullHtml(html) {
+        // We are in the frontend and can use the DOM and `document` variable
+    }
+
+    ToFullHtml(lesserhtml) {
+        // We are in the frontend and can use the DOM and `document` variable
     }
 
     // Methods that should be drop-in-replacements for WonkyCMSApiHandler but handle the ESES extensionanility
@@ -189,4 +191,8 @@ class ESESApiExtender {
     //   async CreatePageUsingHtml(html, header, mainPageLang = "sv", useStandardMeasurement = "false")
     //   async ReplacePageUsingHtml(pageKey, html, header = null)
     //   async GetAllPagesWithHtml(lang = "sv")
+
+    async RemovePage(pageKey, validate = false) {
+        return await this.api.RemovePage(pageKey, validate);
+    }
 }

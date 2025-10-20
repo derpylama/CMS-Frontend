@@ -42,8 +42,7 @@ class WonkyCMSApiWrapperFrontend {
     }
 
     async GetPreviewOfPages() {
-        var preview = await window.IPC.getPreviews();
-        return preview;
+        return await window.IPC.getPreviews();
     }
 }
 
