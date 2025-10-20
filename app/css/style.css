@@ -59,11 +59,7 @@ html {
     
 }
 
-/* Rengbåge
-body {
-    background: repeating-conic-gradient(in hsl longer hue, rgb(255, 0, 0), rgb(0, 0, 255), rgb(255,0,0)0.001deg);
-}
-*/
+
 textarea {
 
     resize: none;
@@ -122,23 +118,109 @@ textarea, iframe {
 
 /* === Specific Classes === */
 .page-create-edit-container {
-    display: flex;
-    flex-direction: column;
     gap: var(--page-gap-width);
     padding: 0 var(--page-gap-width);
     margin: 0 var(--standard-gap-width);
     border: solid var(--standard-border-width);
-    background-color: var(--secondary-background);
     border-radius: var(--medium-border-radius);
 }
+
+.equal-width-flexbox {
+    flex: 1;
+}
+
+
+
+
+.topbar-container {
+    border-bottom: solid var(--standard-border-width);
+    margin-bottom: var(--standard-gap-width);
+    width: 100%;
+    height: 4rem;
+    background-color: var(--medium-backdrop-color);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.topbar-button {
+    font-size: 1rem;
+    width: 8rem;
+    text-align: center;
+    border: none;
+    padding: 0.25rem;
+    border-width: 0.25rem;
+}
+
+
+
+
+
+.checkbox-button {
+    cursor: pointer;
+    display: block;
+    position: relative;
+}
+
+
+.checkbox-button > input {
+    display: none;
+}
+
+
+.checkbox-button:has(input[type="checkbox"]) {
+    display: inline-block;
+    background-color: rgb(255, 255, 0);
+}
+
+.checkbox-button:has(input[id="nav-toggle-lang"]) {
+    display: flex;
+    flex-direction: row;
+}
+
+
+
+.checkbox-button:has(input[id="nav-toggle-lang"]) > div {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+}
+
+.checkbox-button:has(input[type="checkbox"]:checked) > .swe-lang,
+.checkbox-button:has(input[type="checkbox"]:not(:checked)) > .eng-lang {
+
+    background-color: black;
+    color: #fff;
+
+    
+}
+.checkbox-button:has(input[type="checkbox"]:checked) > .eng-lang,
+.checkbox-button:has(input[type="checkbox"]:not(:checked)) > .swe-lang {
+    background: none;
+    background-color: rgb(255, 255, 255);
+    color: #000000;
+
+}
+
+
+
+
+
+
+.rainbow-thing {
+    background: repeating-conic-gradient(in hsl longer hue, rgb(255, 0, 0), rgb(0, 0, 255), rgb(255,0,0)0.001deg);
+}
+
+
+
+
 .edit-container {
     display: flex;
     gap: var(--page-gap-width);
 }
-.text-area-container {
-    flex: 1;
-    margin: var(--page-gap-width) 0;
-}
+
 .text-container {
     padding: var(--standard-gap-width);
     border-radius: var(--medium-border-radius);
@@ -176,19 +258,7 @@ textarea, iframe {
     display: block;
 }
 
-.topbar-container {
-    border-bottom: solid var(--standard-border-width);
-    margin-bottom: var(--standard-gap-width);
 
-    width: 100%;
-    height: 4rem;
-
-    background-color: var(--medium-backdrop-color);
-
-    display: flex;
-    flex-direction: row;
-    
-}
 
 #previews-container {
     display: flex;
@@ -199,16 +269,6 @@ textarea, iframe {
 }
 
 /* MARK: Use rem? */
-.topbar-button {
-    font-size: 1rem;
-    width: 8rem;
-    height: 100%;
-    border: none;
-    
-    padding: 0.25rem;
-
-    border-width: 0.25rem;
-}
 
 
 .topbar-header {
