@@ -37,8 +37,14 @@ class ConfigManager {
 
     readConfigFile() {
         if (this.configFileExists()) {
-            const data = fs.readFileSync(this.getConfigPath(), 'utf-8');
-            return JSON.parse(data);
+            const json = fs.readFileSync(this.getConfigPath(), 'utf-8');
+            try {
+                return JSON.parse(json);
+            } catch (e) {
+                console.error("Error parsing config file:", e);
+                return {};
+            }
+
         }
         return {};
     }

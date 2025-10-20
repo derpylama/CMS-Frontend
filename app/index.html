@@ -25,21 +25,20 @@
     </head>
 
     <body>
-        <header class="topbar-container">
+        <header>
             <nav id="header-left" class="hflex">
-                <h1 class="on-pages">CMS Frontend</h1>
+                <h1 id="topbar-title" class="on-pages">CMS Frontend</h1>
                 <button id="nav-go-back" class="on-viewer on-editor topbar-button">Go Back</button>
-                <label class="on-viewer on-editor checkbox-button topbar-button" for="nav-toggle-viewer-editor">
+                <label class="on-viewer on-editor-edit checkbox-button topbar-button" for="nav-toggle-viewer-editor">
                     <input type="checkbox" id="nav-toggle-viewer-editor">
-                    Viewer/Editor
+                    <span id="nav-toggle-viewer-editor-text">Viewer/Editor</span>
                 </label>
             </nav>
             <nav id="header-right" class="hflex">
-                <label class="on-pages on-viewer on-editor-edit checkbox-button topbar-button" for="nav-toggle-lang">
+                <label class="on-pages on-viewer on-editor-edit checkbox-button" for="nav-toggle-lang">
                     <input type="checkbox" id="nav-toggle-lang">
                     <div class="eng-lang">Eng</div>
                     <div class="swe-lang">Swe</div>
-                    
                 </label>
                 
                 <button id="nav-create-page" class="on-pages topbar-button">Create Page</button>
@@ -58,9 +57,11 @@
             </section>
 
             <section id="page-editor" class="on-editor vflex">
-                <div class="hflex">
-                    <label>Header:</label>
-                    <input type="text" id="editor-input-header">
+                <div class="vflex">
+                    <div class="hflex">
+                        <label>Header:</label>
+                        <input type="text" id="editor-input-header">
+                    </div>
                     <select id="editor-select-lang" class="on-editor-create">
                         <option value="en">English</option>
                         <option value="sv">Svenska</option>

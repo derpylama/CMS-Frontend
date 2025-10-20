@@ -462,7 +462,7 @@ class WonkyCMSApiWrapper {
         });
     }
 
-    async GetPreviewOfPages(previewLength = 100, previewLang = "sv"){ //returns {pageKey: { header: "pageHeader", preview: "content from page that is as long as the set limit"}}
+    async GetPreviewOfPages(previewLength = 100, previewLang = "sv") { //returns {pageKey: { header: "pageHeader", preview: "content from page that is as long as the set limit"}}
 
         const pages = await this.FetchAllPages();
         const pagePreviews = {};
@@ -504,7 +504,7 @@ class WonkyCMSApiWrapper {
             // 3. Add preview to result, even if it's empty
             pagePreviews[pageKey] = {
                 header: values["header"] || pageKey.charAt(0).toUpperCase() + pageKey.slice(1),
-                preview: combinedPreview.length !== 0 ? combinedPreview : "Empty content"
+                preview: combinedPreview.length !== 0 ? combinedPreview : (previewLang === "en" ? "Empty content" : "Inget innehåll")
             };
         }
 

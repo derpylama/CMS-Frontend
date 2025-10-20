@@ -10,6 +10,19 @@ const api = new WonkyCMSApiWrapper(config.get("api"));
 
 let win;
 
+function getPreferedThemeFromConfig() {
+    if (config.has("theme")) {
+        const theme = config.get("theme");
+        if (theme === "light" || theme === "dark") {
+            return theme;
+        }
+
+        return "system";
+    } else {
+        return "system";
+    }
+}
+
 function createWindow () {
     win = new BrowserWindow({
         width: 1280,
@@ -22,9 +35,13 @@ function createWindow () {
     win.loadFile('app/index.html');
 }
 
+ipcMain.handle("get-prefered-theme", async (event) => {
+    return getPreferedThemeFromConfig();
+});
 
-ipcMain.handle("get-previews", async (event) => {
-    return await api.GetPreviewOfPages();
+
+ipcMain.handle("get-preview-of-pages", async (event, previewLength, previewLang) => {
+    return await api.GetPreviewOfPages(previewLength, previewLang);
 });
 
 ipcMain.handle("remove-page", async (event, pageKey, validate) => {

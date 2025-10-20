@@ -41,8 +41,8 @@ class WonkyCMSApiWrapperFrontend {
         await window.IPC.removePage(pageKey, validate);
     }
 
-    async GetPreviewOfPages() {
-        return await window.IPC.getPreviews();
+    async GetPreviewOfPages(previewLength = 100, previewLang = "sv") {
+        return await window.IPC.getPreviewOfPages(previewLength, previewLang);
     }
 }
 

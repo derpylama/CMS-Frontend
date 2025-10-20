@@ -1,55 +1,69 @@
-[data-theme="light"] {
+:root {
     --standard-font: Arial, Helvetica, sans-serif;
 
-    --standard-background: rgb(207, 207, 207);
-    --secondary-background: rgb(119, 255, 0);
-
-    --medium-backdrop-color: rgba(0, 0, 0, 0.4);
-    --light-backdrop-color: rgba(0, 0, 0, 0.2);
-
-    --standard-font-color: rgb(0,0,0);
-    --standard-border-color: rgba(0, 0, 0, 0.8);
-    --standard-border-width: 0.2rem;
+    --standard-border-width: 0.1rem;
 
     --medium-border-radius: 1rem;
+    --light-border-radius: 0.5rem;
+    --topbar-border-radius: 0.5rem;
 
     --standard-gap-width: 1.5rem;
     --page-gap-width: 1rem;
 
-    --highlighted-color: rgb(255, 0, 0);
-    --highlighted-border-width: 0.4rem;
+    --topbar-ypadding: 0.4rem;
+    --topbar-ymargin: 0.6rem;
 
-    --focused-border-color: rgb(39, 37, 37);
+    --highlighted-border-width: 0.4rem;
+}
+
+[data-theme="light"] {
+    --standard-background: #cfcfcf;
+    --secondary-background: #b4b4b4;
+
+    --divider-color: #969696;
+
+    --medium-backdrop-color: rgba(0, 0, 0, 0.4);
+    --light-backdrop-color: rgba(0, 0, 0, 0.2);
+
+    --standard-font-color: #000000;
+    --standard-border-color: rgba(0, 0, 0, 0.8);
+
+    --highlighted-color: #ff0000;
+
+    --focused-border-color: #272525;
 
     --li-background-hover: rgba(0, 0, 0, 0.2);
 
-    --preview-card-background: rgb(180, 180, 180);
+    --preview-card-background: #b4b4b4;
+
+    --lang-toggled-background: #b4b4b4;
+    --lang-toggled-color: black;
+    --lang-untoggled-background: #1b1b1b;
+    --lang-untoggled-color: white;
 }
 
 [data-theme="dark"] {
-    --standard-font: Arial, Helvetica, sans-serif;
-
     --standard-background: #181818;
-    --secondary-background: rgb(119, 255, 0);
+    --secondary-background: #252525;
+
+    --divider-color: #2c2c2c;
 
     --medium-backdrop-color: rgba(0, 0, 0, 0.4);
     --light-backdrop-color: rgba(0, 0, 0, 0.2);
 
     --standard-font-color: #d6d7e2;
     --standard-border-color: rgba(0, 0, 0, 0.8);
-    --standard-border-width: 0.2rem;
 
-    --medium-border-radius: 1rem;
+    --highlighted-color: #ff0000;
 
-    --standard-gap-width: 1.5rem;
-    --page-gap-width: 1rem;
-
-    --highlighted-color: rgb(255, 0, 0);
-    --highlighted-border-width: 0.4rem;
-
-    --focused-border-color: rgb(39, 37, 37);
+    --focused-border-color: #272525;
 
     --li-background-hover: rgba(0, 0, 0, 0.2);
 
     --preview-card-background: #242424;
+
+    --lang-toggled-background: #b4b4b4;
+    --lang-toggled-color: black;
+    --lang-untoggled-background: #1b1b1b;
+    --lang-untoggled-color: white;
 }
