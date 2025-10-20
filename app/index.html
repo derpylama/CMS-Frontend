@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-page="pages" data-lang="en">
     <head>
         <meta charset="UTF-8" />
 
@@ -25,91 +25,54 @@
     </head>
 
     <body>
-        <div class="topbar-container">
-            <a class="topbar-header">Smörig CMS</a>
-            <div class="topbar-button-container">
-                <button id="top-button-edit" class="topbar-button">Edit</button>
-                <button id="top-button-view" class="topbar-button">View</button>
-                <button id="top-button-create-page"class="topbar-button">Create Page</button> 
-            </div>
-        </div>
+        <header>
+            <nav id="header-left">
+                <h1 class="on-pages">Smörig CMS</h1>
+                <button id="nav-go-back" class="on-viewer on-editor">Go Back</button>
+                <input type="checkbox" id="nav-toggle-viewer-editor" class="on-viewer on-editor">
+            </nav>
+            <nav id="header-right">
+                <input type="checkbox" id="nav-toggle-lang" class="on-pages on-viewer on-editor-edit">
+                <button id="nav-create-page" class="on-pages">Create Page</button>
+            </nav>
+        </header>
 
-        <div id="main-container">
-            <div id="edit-container" class="cons">
-                <div class="page-create-edit-container">
-                    <div>
-                        <h2>Main Container</h2>
-                        <div class="input-container">
-                            <label class="label-header">Header:</label>
-                            <input type="text" placeholder="Koalor" id="input-header" class="input-field">
+        <main>
 
-                        </div>
-                        <div>
-                            <button id="button-small_1" class="button-select">View</button>
-                            <button id="button-small_2" class="button-select">Select</button>
-                            <button id="button-small_3" class="button-select">Delete</button>
-                            <button id="button-small_4" class="button-select">Get</button>
-                        </div>
-                        <button id="button-update" class="button-test large-button">&#x2328;Update</button>
+            <section id="page-pages" class="on-pages">
+                <div id="previews-container"></div>
+            </section>
 
-                    </div>
-                    <div class="edit-container">
-                        <div class="text-area-container">
-                            <label>HTML:</label>
-                            <div class="text-container"><textarea id="input-html-textarea" spellcheck="false"></textarea></div>
-                        </div>
-                        <div class="text-area-container">
-                            <label>Preview:</label>
-                            <div class="text-container"><iframe></iframe></div>
-                        </div>
-                    </div>
+            <section id="page-viewer" class="on-viewer">
+                <h2>Title</h2>
+                <div id="content-container"></div>
+            </section>
 
-                </div> 
-            </div>
-
-            <div id="view-container" class="cons">
-                <div class="previews"></div>
-            </div>
-            
-            <div id="create-page-container" class="cons">
-                <div class="page-create-edit-container">
-                    <div>
-                        <h2>Create page Container</h2>
-                        <div class="input-container">
-                            <label class="label-header">Header:</label>
-                            <input type="text" placeholder="Koalor" id="input-header" class="input-field">
-                            <!--
-                            <div>
-                                <label>Standard unit for width:</label>
-                                <select id="select_unit_1" class="unit_select">
-                                    <option value="px">px</option>
-                                    <option value="rem">rem</option>
-                                    <option value="%">%</option>
-                                    <option value="em">em</option>
-                                </select>
-                            </div
-                            -->
+            <section id="page-editor" class="on-editor">
+                <div class="hflex">
+                    <label>Header:</label>
+                    <input type="text" id="editor-input-header">
+                    <select id="editor-select-lang">
+                        <option value="en">English</option>
+                        <option value="sv">Svenska</option>
+                    </select>
+                </div>
+                <div class="hflex">
+                    <div class="vflex">
+                        <h3>HTML</h3>
+                        <div class="text-container">
+                            <textarea id="editor-html" spellcheck="false"></textarea>
                         </div>
                     </div>
-                    <div class="edit-container">
-                        <div class="text-area-container">
-                            <label>HTML:</label>
-                            <div class="text-container"><textarea id="input-html-textarea" spellcheck="false"></textarea></div>
-                        </div>
-                        <div class="text-area-container">
-                            <label>Preview:</label>
-                            <div class="text-container"><iframe></iframe></div>
+
+                    <aside class="vflex">
+                        <h3>Preview</h3>
+                        <div class="text-container">
+                            <iframe id="editor-preview"></iframe>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <select id="select-language">
-                <option>eng</option>
-                <option>swe</option>
-            </select>
-        </div>
-
-        <p>👋</p>
-    </body>
+            </section>
+        
+        </main>
 </html>

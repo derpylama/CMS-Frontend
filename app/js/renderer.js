@@ -1,69 +1,62 @@
-const viewButton = document.getElementById("top-button-view")
-const editButton = document.getElementById("top-button-edit")
-const createPageButton = document.getElementById("top-button-create-page")
-const defaultCon = document.getElementById("view-container")
-const cons = document.querySelectorAll(".cons")
-const loadButton = document.getElementById("load-previews")
-
 const frapi = new WonkyCMSApiHandlerFrontend();
 
-function resetButtons() {
-    [viewButton, editButton, createPageButton].forEach(button => {
-        button.classList.remove("button-highlighted")
-    });
-}
-
-function selectButton(button) {
-    console.log("Selecting button:", button);
-    button.classList.add("button-highlighted")
-}
-
-editButton.addEventListener("click", (event) => {
-    cons.forEach((element) => {
-        element.style.display = "none"
-    })
-    document.getElementById("edit-container").style.display = "block"
-    resetButtons()
-    selectButton(document.getElementById("top-button-edit"))
-})
-
-viewButton.addEventListener("click", (event) => {
-    cons.forEach((element) => {
-        element.style.display = "none"
-    })
-    document.getElementById("view-container").style.display = "flex"
-    resetButtons()
-    selectButton(document.getElementById("top-button-view")) 
-})
-
-createPageButton.addEventListener("click", (event) => {
-    cons.forEach((element) => {
-        element.style.display = "none"
-    })
-    document.getElementById("create-page-container").style.display = "block"
-    resetButtons()
-    selectButton(document.getElementById("top-button-create-page"))
-    
-})
-
 window.addEventListener("DOMContentLoaded", async (e) => {
-    var previewCon = document.getElementById("view-container");
-    var preview = await frapi.GetPreviewOfPages();
+    // Setup navigation buttons
+    const navGoBackBtn = document.getElementById("nav-go-back");
+    const navToggleViewerEditor = document.getElementById("nav-toggle-viewer-editor");
+    const navToggleLang = document.getElementById("nav-toggle-lang");
+    const navCreatePageBtn = document.getElementById("nav-create-page");
 
-    for (const [key, contentPreview] of Object.entries(preview)) {
-        var div = document.createElement("div");
+    navToggleLang.addEventListener("change", async (e) => {
+        if (navToggleLang.checked) {
+            document.documentElement.setAttribute("data-lang", "sv");
+        } else {
+            document.documentElement.setAttribute("data-lang", "en");
+        }
+    });
+
+    navToggleViewerEditor.addEventListener("change", async (e) => {
+        if (navToggleViewerEditor.checked) {
+            // Changes to editor mode
+            document.documentElement.setAttribute("data-page", "editor");
+        } else {
+            // Changes to viewer mode
+            document.documentElement.setAttribute("data-page", "viewer");
+        }
+    });
+
+    navCreatePageBtn.addEventListener("click", async (e) => {
+        document.documentElement.setAttribute("data-page", "editor");
+    });
+
+    navGoBackBtn.addEventListener("click", async (e) => {
+        if (document.documentElement.getAttribute("data-page") !== "pages") {
+            document.documentElement.setAttribute("data-page", "pages");
+        }
+    });
+
+    // Load previews
+    const previewContainer = document.getElementById("previews-container");
+    var previews = await frapi.GetPreviewOfPages();
+
+    for (const [key, contentPreview] of Object.entries(previews)) {
+        const div = document.createElement("div");
         div.classList.add("previews")
 
-        var h2 = document.createElement("h2");
+        div.addEventListener("click", async (e) => {
+            document.documentElement.setAttribute("data-page", "viewer");
+        });
+
+        const h2 = document.createElement("h2");
         h2.innerText = contentPreview["header"];
 
-        var p = document.createElement("p");
+        const p = document.createElement("p");
         p.innerText = contentPreview["preview"];
 
         div.appendChild(h2);
         div.appendChild(p);
 
-        previewCon.appendChild(div);
+        previewContainer.appendChild(div);
     }
 
     // html = `

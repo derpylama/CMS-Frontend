@@ -5,6 +5,38 @@
 }
 
 
+/* === Sectioning Styles === */
+
+[data-page="pages"] .on-viewer:not(.on-pages),
+[data-page="pages"] .on-editor:not(.on-pages),
+[data-page="pages"] .on-editor-edit:not(.on-pages), 
+[data-page="pages"] .on-editor-create:not(.on-pages) {
+    display: none;
+}
+
+[data-page="editor"] .on-viewer:not(.on-editor):not(.on-editor-edit):not(.on-editor-create),
+[data-page="editor"] .on-pages:not(.on-editor):not(.on-editor-edit):not(.on-editor-create) {
+    display: none;
+}
+
+[data-page="viewer"] .on-editor:not(.on-viewer),
+[data-page="viewer"] .on-editor-edit:not(.on-viewer),
+[data-page="viewer"] .on-editor-create:not(.on-viewer),
+[data-page="viewer"] .on-pages:not(.on-viewer) {
+    display: none;
+}
+
+.hflex {
+    display: flex;
+    flex-direction: row;
+}
+
+.vflex {
+    display: flex;
+    flex-direction: column;
+}
+
+
 /* === Element Styles === */
 
 html {

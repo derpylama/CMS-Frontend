@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+
+        <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+        <meta
+          http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'"
+        />
+        <meta
+          http-equiv="X-Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'"
+        />
+
+        <link rel="stylesheet" type="text/css" href="css/vars.css">
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+        <link rel="stylesheet" type="text/css" href="css/general.css">
+
+        <script src="js/apifrontend.js"></script>
+        <script src="js/eses_ext.js"></script>
+        <script src="js/renderer.js" defer></script>
+
+        <title>Hello from Electron renderer!</title>
+    </head>
+
+    <body>
+        <div class="topbar-container">
+            <a class="topbar-header">Smörig CMS</a>
+            <div class="topbar-button-container">
+                <button id="top-button-edit" class="topbar-button">Edit</button>
+                <button id="top-button-view" class="topbar-button">View</button>
+                <button id="top-button-create-page"class="topbar-button">Create Page</button> 
+            </div>
+        </div>
+
+        <div id="main-container">
+            <div id="edit-container" class="cons">
+                <div class="page-create-edit-container">
+                    <div>
+                        <h2>Main Container</h2>
+                        <div class="input-container">
+                            <label class="label-header">Header:</label>
+                            <input type="text" placeholder="Koalor" id="input-header" class="input-field">
+
+                        </div>
+                        <div>
+                            <button id="button-small_1" class="button-select">View</button>
+                            <button id="button-small_2" class="button-select">Select</button>
+                            <button id="button-small_3" class="button-select">Delete</button>
+                            <button id="button-small_4" class="button-select">Get</button>
+                        </div>
+                        <button id="button-update" class="button-test large-button">&#x2328;Update</button>
+
+                    </div>
+                    
+                    <div class="edit-container">
+                        <div class="text-area-container">
+                            <label>HTML:</label>
+                            <div class="text-container"><textarea id="input-html-textarea" spellcheck="false"></textarea></div>
+                        </div>
+                        <div class="text-area-container">
+                            <label>Preview:</label>
+                            <div class="text-container"><iframe></iframe></div>
+                        </div>
+                    </div>
+
+                </div> 
+            </div>
+
+            <div id="view-container" class="cons">
+                <div class="previews"></div>
+            </div>
+            
+            <div id="create-page-container" class="cons">
+                <div class="page-create-edit-container">
+                    <div>
+                        <h2>Create page Container</h2>
+                        <div class="input-container">
+                            <label class="label-header">Header:</label>
+                            <input type="text" placeholder="Koalor" id="input-header" class="input-field">
+                            <!--
+                            <div>
+                                <label>Standard unit for width:</label>
+                                <select id="select_unit_1" class="unit_select">
+                                    <option value="px">px</option>
+                                    <option value="rem">rem</option>
+                                    <option value="%">%</option>
+                                    <option value="em">em</option>
+                                </select>
+                            </div
+                            -->
+                        </div>
+                    </div>
+                    <div class="edit-container">
+                        <div class="text-area-container">
+                            <label>HTML:</label>
+                            <div class="text-container"><textarea id="input-html-textarea" spellcheck="false"></textarea></div>
+                        </div>
+                        <div class="text-area-container">
+                            <label>Preview:</label>
+                            <div class="text-container"><iframe></iframe></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <select id="select-language">
+                <option>eng</option>
+                <option>swe</option>
+            </select>
+        </div>
+
+        <p>👋</p>
+    </body>
+</html>
