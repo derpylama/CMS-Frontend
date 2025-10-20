@@ -25,15 +25,26 @@
     </head>
 
     <body>
-        <header>
-            <nav id="header-left">
+        <header class="topbar-container">
+            <nav id="header-left" class="hflex">
                 <h1 class="on-pages">Smörig CMS</h1>
-                <button id="nav-go-back" class="on-viewer on-editor">Go Back</button>
-                <input type="checkbox" id="nav-toggle-viewer-editor" class="on-viewer on-editor">
+                <button id="nav-go-back" class="on-viewer on-editor topbar-button">Go Back</button>
+                <label class="on-viewer on-editor checkbox-button topbar-button" for="nav-toggle-viewer-editor">
+                    <input type="checkbox" id="nav-toggle-viewer-editor">
+                    Create Page
+                </label>
+
+                
             </nav>
-            <nav id="header-right">
-                <input type="checkbox" id="nav-toggle-lang" class="on-pages on-viewer on-editor-edit">
-                <button id="nav-create-page" class="on-pages">Create Page</button>
+            <nav id="header-right" class="hflex">
+                <label class="on-pages on-viewer on-editor-edit checkbox-button topbar-button" for="nav-toggle-lang">
+                    <input type="checkbox" id="nav-toggle-lang">
+                    <div class="eng-lang">Eng</div>
+                    <div class="swe-lang">Swe</div>
+                    
+                </label>
+                
+                <button id="nav-create-page" class="on-pages topbar-button">Create Page</button>
             </nav>
         </header>
 
@@ -57,15 +68,15 @@
                         <option value="sv">Svenska</option>
                     </select>
                 </div>
-                <div class="hflex">
-                    <div class="vflex">
+                <div class="hflex page-create-edit-container">
+                    <div class="vflex equal-width-flexbox">
                         <h3>HTML</h3>
                         <div class="text-container">
                             <textarea id="editor-html" spellcheck="false"></textarea>
                         </div>
                     </div>
 
-                    <aside class="vflex">
+                    <aside class="vflex equal-width-flexbox">
                         <h3>Preview</h3>
                         <div class="text-container">
                             <iframe id="editor-preview"></iframe>
