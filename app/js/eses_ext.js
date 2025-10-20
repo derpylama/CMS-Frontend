@@ -174,9 +174,7 @@ class ESESApiExtender {
 
 // Test
 window.addEventListener('DOMContentLoaded', (event) => {
-    const frapi = new WonkyCMSApiHandlerFrontend("http://example.com/api");
-
-    const eses = new ESESApiExtender(frapi);
+    const eses = new ESESApiExtender({});
 
     const html = `
     <body>
