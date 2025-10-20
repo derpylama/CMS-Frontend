@@ -49,17 +49,24 @@ ipcMain.handle("set-base-url", async (event, baseUrl) => {
 
 ipcMain.handle('show-choice', async (event, { title, message, buttons, defaultId, cancelId }) => {
     const result = await dialog.showMessageBox(win, {
-      type: 'question',
-      buttons: buttons,
-      defaultId: defaultId,
-      cancelId: cancelId,
-      title,
-      message,
+        type: 'question',
+        buttons: buttons,
+        defaultId: defaultId,
+        cancelId: cancelId,
+        title,
+        message,
     });
   
     return result.response;
 });
 
+ipcMain.on('ford-focus-app', () => {
+    if (win) {
+        if (win.isMinimized()) win.restore();
+        win.show();
+        win.focus();
+    }
+});
 
 app.whenReady().then(() => {
     createWindow();

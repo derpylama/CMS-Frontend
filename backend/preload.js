@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld("IPC", {
     fetchAllPages: (filterDeleted) => ipcRenderer("fetch-all-pages", filterDeleted),
     setBaseUrl: (baseUrl) => ipcRenderer("base-url", baseUrl),
     showChoice: ({ title, message, buttons, defaultId, cancelId }) => ipcRenderer.invoke('show-choice', { title, message, buttons, defaultId, cancelId }),
+    focusApp: () => ipcRenderer.send('ford-focus-app'),
 });

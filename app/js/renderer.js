@@ -1,5 +1,17 @@
 const frapi = new WonkyCMSApiHandlerFrontend();
 
+function alertW(msg) {
+    window.IPC.showChoice({
+        "title": "CMS Frontend",
+        "message": msg,
+        "buttons": ["OK"],
+        "defaultId": 0,
+        "cancelId": 1
+    }).then((response) => {
+        return;
+    });
+}
+
 window.addEventListener("DOMContentLoaded", async (e) => {
     // Setup navigation buttons
     const navGoBackBtn = document.getElementById("nav-go-back");
@@ -70,9 +82,24 @@ window.addEventListener("DOMContentLoaded", async (e) => {
         const editorSelectLang = document.getElementById("editor-select-lang");
         const editorHtml = document.getElementById("editor-html");
 
-        // MARK: Save content here
+        if (editorInputHeader.value.trim() === "") {
+            alertW("Header cannot be empty.");
+            return;
+        }
 
-        // Get content
+        // Save page
+        try {
+            await frapi.CreatePageUsingHtml(
+                editorHtml.value,
+                editorInputHeader.value.trim(),
+                editorSelectLang.value
+            );
+        } catch (err) {
+            alertW("Error saving page: " + err.message);
+            return;
+        }
+
+        // Return to pages
         document.documentElement.setAttribute("data-page", "pages");
     });
 
