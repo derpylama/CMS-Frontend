@@ -21,6 +21,11 @@ window.addEventListener("DOMContentLoaded", async (e) => {
 
     const editorInputHeader = document.getElementById("editor-input-header");
     const editorHtml = document.getElementById("editor-html");
+    const editorPreview = document.getElementById("editor-preview");
+    // when value of editorHtml changes set editorPreview.srcdoc to it
+    editorHtml.addEventListener("input", (e) => {
+        editorPreview.srcdoc = editorHtml.value;
+    });
 
     navToggleLang.addEventListener("change", async (e) => {
         // If in edit ask first
