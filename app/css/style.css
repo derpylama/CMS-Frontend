@@ -141,8 +141,15 @@ textarea, iframe {
 .previews {
     background-color: var(--preview-card-background);
     width: 15rem;
-    height: 15rem;
+    height: 10rem;
+
+    padding: .8rem;
+    border-radius: var(--medium-border-radius);
     margin: var(--page-gap-width);
+}
+
+.previews > h2 {
+    margin: 0.5rem;
 }
 
 #view-container {
@@ -169,6 +176,14 @@ textarea, iframe {
     display: flex;
     flex-direction: row;
     
+}
+
+#previews-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    justify-content: center;
 }
 
 /* MARK: Use rem? */

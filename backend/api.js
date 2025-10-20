@@ -336,7 +336,6 @@ class WonkyCMSApiWrapper {
     // === GENERAL ACTIONS (with JSON) ===
 
     async FetchAllPages(filterDeleted = true) { // Returns {"<pageKey>": {"header": "<header>", ...data...}, ...}
-
         const text = await this.getText(this.baseUrl);
         try {
             const pages = text.split("pages =")[1];
@@ -471,6 +470,8 @@ class WonkyCMSApiWrapper {
         for (const [pageKey, values] of Object.entries(pages)) {
             let combinedPreview = "";
             
+
+
             // Get all matching textInfo keys
             const matchingKeys = Object.keys(values)
             .filter(key => key.includes("textInfo") && key.endsWith(`_${previewLang}`));
@@ -502,8 +503,8 @@ class WonkyCMSApiWrapper {
     
             // 3. Add preview to result, even if it's empty
             pagePreviews[pageKey] = {
-                header: values["header"] || "",
-                preview: combinedPreview
+                header: values["header"] || pageKey.charAt(0).toUpperCase() + pageKey.slice(1),
+                preview: combinedPreview.length !== 0 ? combinedPreview : "Empty content"
             };
         }
 
