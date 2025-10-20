@@ -93,11 +93,35 @@ ESES Extension
     When converting we can use recursion and the bellow elementsMap, if an element type is under "header" and has no child elements we map it to `h3`, if its under "text" and has no child elements we map it to `p`, if its under "container" we map it to `div`,
       if it has content and is udner "header" or "text" we handle with the "isWrapper" logic.
     If its under emulated we use the provided function to get its text representation.
+    All other elements are mapped to NotRepresented.
+
+    Example WonkyHTML with ESES data:
+    <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
+        <p style="display: none;">ESES1:...base64-encode-of-json...</p>
+        <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
+        <p style="font-size:18px;color:#003300;">Koalor är små tåliga trädlevande djur från Australien.</p>
+        <img style="width:100%;height:250px;height:250;border-radius:10;border-radius:10;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image">
+        <div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:row;">
+            <h3 style="font-size:28px;color:#006633;">Fakta om Koalor</h3>
+            <p style="font-size:16px;color:#666600;">De är kända för att äta eukalyptusblad.</p>
+            <p style="font-size:18px;color:#ff6600;">Koalor äter nästan uteslutande eukalyptusblad.</p>
+            <img style="width:80%;height:200px;height:200;border-radius:15;border-radius:15;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Koala_eating_eucalyptus_leaf.jpg" alt="Image">
+        </div>
+        <div style="width:80%;height:250px;display:flex;background-color:#ffe4b5;flex-flow:column;">
+            <h3 style="font-size:24px;color:green;">Roliga fakta</h3>
+            <p style="font-size:16px;color:#005500;">Koalor sover upp till 20 timmar per dag.</p>
+            <p style="font-size:14px;">Koalor har starka klor för att klättra i träd.</p>
+            <p style="">Koalor kommunicerar med olika ljud, från snarkningar till skrik.</p>
+            <p style="">test</p>
+            <img style="width:90%;height:180px;height:180;border-radius:20;border-radius:20;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/0/08/Koala_sleeping_in_tree.jpg" alt="Image">
+            <img style="width:70%;height:140px;height:140;border-radius:25;border-radius:25;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/1/14/Koala_close_up.jpg" alt="Image">
+        </div>
+    </div>
 */
 
 class ESESApiExtender {
-    constructor(baseUrl) {
-        this.api = new WonkyCMSApiHandlerFrontend(baseUrl);
+    constructor(api) {
+        this.api = api;
         this.esesVersion = "1";
 
         this.elementsMap = {
@@ -147,3 +171,47 @@ class ESESApiExtender {
         // We are in the frontend and can use the DOM and `document` variable
     }
 }
+
+// Test
+window.addEventListener('DOMContentLoaded', (event) => {
+    const frapi = new WonkyCMSApiHandlerFrontend("http://example.com/api");
+
+    const eses = new ESESApiExtender(frapi);
+
+    const html = `
+    <body>
+        <main>
+            <h2>Header start <em> with emphasis</em> and end</h2>
+            <figure>
+                <img src="image.jpg">
+                <figcaption>Caption</figcaption>
+            </figure>
+            <video>
+                <source src="video.mp4">
+            </video>
+        </main>
+        <aside>
+            <h6>Side Header</h6>
+            <p>Regular text>
+            <img src="sideimage.png">
+            <img src="sideimage2.png" alt="An image">
+        </aside>
+    </body>
+    `;
+
+    const lesser = eses.ToFullHtml(html);
+
+    console.log("Lesser HTML:");
+    console.log(lesser);
+
+    const restored = eses.FromFullHtml(lesser);
+
+    console.log("Restored HTML:");
+    console.log(restored);
+
+    if (html === restored) {
+        console.log("Success: Restored HTML matches original");
+    } else {
+        console.log("Failure: Restored HTML does not match original");
+    }
+});
