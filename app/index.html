@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html data-page="pages" data-lang="en">
+<html data-page="pages" data-lang="en" data-theme="dark">
     <head>
         <meta charset="UTF-8" />
 
         <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
         <meta
           http-equiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self'"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src * data"
         />
         <meta
           http-equiv="X-Content-Security-Policy"
@@ -21,20 +21,18 @@
         <script src="js/eses_ext.js"></script>
         <script src="js/renderer.js" defer></script>
 
-        <title>Hello from Electron renderer!</title>
+        <title>SmØrig CMS Frontend</title>
     </head>
 
     <body>
         <header class="topbar-container">
             <nav id="header-left" class="hflex">
-                <h1 class="on-pages">Smörig CMS</h1>
+                <h1 class="on-pages">CMS Frontend</h1>
                 <button id="nav-go-back" class="on-viewer on-editor topbar-button">Go Back</button>
                 <label class="on-viewer on-editor checkbox-button topbar-button" for="nav-toggle-viewer-editor">
                     <input type="checkbox" id="nav-toggle-viewer-editor">
                     Viewer/Editor
                 </label>
-
-                
             </nav>
             <nav id="header-right" class="hflex">
                 <label class="on-pages on-viewer on-editor-edit checkbox-button topbar-button" for="nav-toggle-lang">
@@ -55,15 +53,15 @@
             </section>
 
             <section id="page-viewer" class="on-viewer">
-                <h2>Title</h2>
+                <h2 id="header">Title</h2>
                 <div id="content-container"></div>
             </section>
 
-            <section id="page-editor" class="on-editor">
+            <section id="page-editor" class="on-editor vflex">
                 <div class="hflex">
                     <label>Header:</label>
                     <input type="text" id="editor-input-header">
-                    <select id="editor-select-lang">
+                    <select id="editor-select-lang" class="on-editor-create">
                         <option value="en">English</option>
                         <option value="sv">Svenska</option>
                     </select>
@@ -82,6 +80,10 @@
                             <iframe id="editor-preview"></iframe>
                         </div>
                     </div>
+                </div>
+                <div class="hflex">
+                    <button id="editor-cancel">Cancel</button>
+                    <button id="editor-save">Save</button>
                 </div>
             </section>
         

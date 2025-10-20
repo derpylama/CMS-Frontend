@@ -1,5 +1,17 @@
 const frapi = new WonkyCMSApiHandlerFrontend();
 
+function alertW(msg) {
+    window.IPC.showChoice({
+        "title": "CMS Frontend",
+        "message": msg,
+        "buttons": ["OK"],
+        "defaultId": 0,
+        "cancelId": 1
+    }).then((response) => {
+        return;
+    });
+}
+
 window.addEventListener("DOMContentLoaded", async (e) => {
     // Setup navigation buttons
     const navGoBackBtn = document.getElementById("nav-go-back");
@@ -7,7 +19,39 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     const navToggleLang = document.getElementById("nav-toggle-lang");
     const navCreatePageBtn = document.getElementById("nav-create-page");
 
+    const editorInputHeader = document.getElementById("editor-input-header");
+    const editorHtml = document.getElementById("editor-html");
+    const editorPreview = document.getElementById("editor-preview");
+    // when value of editorHtml changes set editorPreview.srcdoc to it
+    editorHtml.addEventListener("input", (e) => {
+        editorPreview.srcdoc = editorHtml.value;
+    });
+
     navToggleLang.addEventListener("change", async (e) => {
+        // If in edit ask first
+        if (document.documentElement.getAttribute("data-page") === "editor") {
+            window.IPC.showChoice({
+                "title": "Save before changing language?",
+                "message": "Changing the language will discard unsaved changes. Do you want to save before proceeding?",
+                "buttons": ["Yes", "Cancel"],
+                "defaultId": 0,
+                "cancelId": 1
+            }).then((response) => {
+                // 0 = Yes
+                // 1 = Cancel/ClosedPopup
+
+                if (response === 0) {
+                    // MARK: Save changes
+                } else {
+                    // Revert toggle
+                    navToggleLang.checked = !navToggleLang.checked;
+
+                    // Exit function
+                    return;
+                }
+            });
+        }
+
         if (navToggleLang.checked) {
             document.documentElement.setAttribute("data-lang", "sv");
         } else {
@@ -18,7 +62,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     navToggleViewerEditor.addEventListener("change", async (e) => {
         if (navToggleViewerEditor.checked) {
             // Changes to editor mode
-            document.documentElement.setAttribute("data-page", "editor");
+            document.documentElement.setAttribute("data-page", "editor-edit");
         } else {
             // Changes to viewer mode
             document.documentElement.setAttribute("data-page", "viewer");
@@ -26,24 +70,72 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     });
 
     navCreatePageBtn.addEventListener("click", async (e) => {
-        document.documentElement.setAttribute("data-page", "editor");
+        editorHtml.value = "";
+        editorInputHeader.value = "";
+        document.documentElement.setAttribute("data-page", "editor-create");
     });
 
     navGoBackBtn.addEventListener("click", async (e) => {
+        navToggleViewerEditor.checked = false;
         if (document.documentElement.getAttribute("data-page") !== "pages") {
             document.documentElement.setAttribute("data-page", "pages");
         }
     });
 
+    // Editor navigaton
+    const editorCancelBtn = document.getElementById("editor-cancel");
+    editorCancelBtn.addEventListener("click", async (e) => {
+        document.documentElement.setAttribute("data-page", "pages");
+    });
+    const editorSaveBtn = document.getElementById("editor-save");
+    editorSaveBtn.addEventListener("click", async (e) => {
+        const editorSelectLang = document.getElementById("editor-select-lang");
+
+        if (editorInputHeader.value.trim() === "") {
+            alertW("Header cannot be empty.");
+            return;
+        }
+
+        // Save page
+        try {
+            await frapi.CreatePageUsingHtml(
+                editorHtml.value,
+                editorInputHeader.value.trim(),
+                editorSelectLang.value
+            );
+        } catch (err) {
+            alertW("Error saving page: " + err.message);
+            return;
+        }
+
+        // Return to pages
+        document.documentElement.setAttribute("data-page", "pages");
+    });
+
     // Load previews
     const previewContainer = document.getElementById("previews-container");
+    const header = document.getElementById("header");
+    const contentCon = document.getElementById("content-container");
+    
+    
     var previews = await frapi.GetPreviewOfPages();
-
+    
     for (const [key, contentPreview] of Object.entries(previews)) {
         const div = document.createElement("div");
-        div.classList.add("previews")
-
+        div.classList.add("previews");
+        div.dataset.id = key;
+        
         div.addEventListener("click", async (e) => {
+            const data = await frapi.GetPage(key);
+            
+            header.innerText = data.header;
+
+            var html = frapi.JsonToHtml(data, document.documentElement.dataset.lang);
+            contentCon.innerHTML = html;
+            editorHtml.innerHTML = html;
+            editorInputHeader.value = data.header;
+
+            
             document.documentElement.setAttribute("data-page", "viewer");
         });
 
@@ -59,138 +151,6 @@ window.addEventListener("DOMContentLoaded", async (e) => {
         previewContainer.appendChild(div);
     }
 
-    // html = `
-    // <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
-    //         <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
-    //         <p style="font-size:18px;color:#003300;">Koalor är små tåliga trädlevande djur från Australien.</p>
-    //         <img style="width:100%;height:250px;height:250;border-radius:10;border-radius:10;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image">
-    //         <div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:row;">
-    //         <h3 style="font-size:28px;color:#006633;">Fakta om Koalor</h3>
-    //         <p style="font-size:16px;color:#666600;">De är kända för att äta eukalyptusblad.</p>
-    //         <p style="font-size:18px;color:#ff6600;">Koalor äter nästan uteslutande eukalyptusblad.</p>
-    //         <img style="width:80%;height:200px;height:200;border-radius:15;border-radius:15;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Koala_eating_eucalyptus_leaf.jpg" alt="Image">
-    //         </div>
-    //         <div style="width:80%;height:250px;display:flex;background-color:#ffe4b5;flex-flow:column;">
-    //         <h3 style="font-size:24px;color:green;">Roliga fakta</h3>
-    //         <p style="font-size:16px;color:#005500;">Koalor sover upp till 20 timmar per dag.</p>
-    //         <p style="font-size:14px;">Koalor har starka klor för att klättra i träd.</p>
-    //         <p style="">Koalor kommunicerar med olika ljud, från snarkningar till skrik.</p>
-    //         <p style="">test</p>
-    //         <img style="width:90%;height:180px;height:180;border-radius:20;border-radius:20;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/0/08/Koala_sleeping_in_tree.jpg" alt="Image">
-    //         <img style="width:70%;height:140px;height:140;border-radius:25;border-radius:25;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/1/14/Koala_close_up.jpg" alt="Image">
-    //         </div>
-    //     </div>
-    // `;
 
-    
-    // jsonstr = `
-    // {
-    //     "header": "My Koala Pages 26",
-    //     "input": "pageHeader=My+Koala+Pages+26&pageLang=sv&useStandardMeasurement=false&newDivWidth[]=100%25&newDivHeight[]=650px&newDivDisplay[]=flex&newDivColor[]=%23d6d6d6&newDivFlow[]=column&newDivJustify[]=space-around&newDivPaddingBot[]=25px&addDivToDiv[]=div1&newDivWidth[]=80%25&newDivHeight[]=300px&newDivDisplay[]=flex&newDivColor[]=%23a3d9a5&newDivFlow[]=row&addDivToDiv[]=div1&newDivWidth[]=80%25&newDivHeight[]=250px&newDivDisplay[]=flex&newDivColor[]=%23ffe4b5&newDivFlow[]=column&addTextInformationHeader[]=Koalor+%E2%80%93+Allm%C3%A4nt&addTextInformationHeader[]=Fakta+om+Koalor&addTextInformationHeader[]=Roliga+fakta&addTextInformationHeaderSize[]=36px&addTextInformationHeaderSize[]=28px&addTextInformationHeaderSize[]=24px&addTextInformationHeaderColor[]=%23005500&addTextInformationHeaderColor[]=%23006633&addTextInformationHeaderColor[]=green&addTextInformationDivHeader[]=div1&addTextInformationDivHeader[]=div2&addTextInformationDivHeader[]=div3&addTextInformation[]=Koalor+%C3%A4r+sm%C3%A5+t%C3%A5liga+tr%C3%A4dlevande+djur+fr%C3%A5n+Australien.&addTextInformation[]=De+%C3%A4r+k%C3%A4nda+f%C3%B6r+att+%C3%A4ta+eukalyptusblad.&addTextInformation[]=Koalor+%C3%A4ter+n%C3%A4stan+uteslutande+eukalyptusblad.&addTextInformation[]=Koalor+sover+upp+till+20+timmar+per+dag.&addTextInformation[]=Koalor+har+starka+klor+f%C3%B6r+att+kl%C3%A4ttra+i+tr%C3%A4d.&addTextInformation[]=Koalor+kommunicerar+med+olika+ljud%2C+fr%C3%A5n+snarkningar+till+skrik.&addTextInformation[]=test&addTextInformationDiv[]=div1&addTextInformationDiv[]=div2&addTextInformationDiv[]=div2&addTextInformationDiv[]=div3&addTextInformationDiv[]=div3&addTextInformationDiv[]=div3&addTextInformationDiv[]=div3&addTextInformationSize[]=18px&addTextInformationSize[]=16px&addTextInformationSize[]=18px&addTextInformationSize[]=16px&addTextInformationSize[]=14px&addTextInformationColor[]=%23003300&addTextInformationColor[]=%23666600&addTextInformationColor[]=%23ff6600&addTextInformationColor[]=%23005500&addImage[]=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F4%2F49%2FKoala_climbing_tree.jpg&addImageDiv[]=div1&addImageDisplay[]=block&addImageWidth[]=100%25&addImageHeight[]=250px&addImageBorderRadius[]=10&addImage[]=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fe%2Fe9%2FKoala_eating_eucalyptus_leaf.jpg&addImageDiv[]=div2&addImageDisplay[]=block&addImageWidth[]=80%25&addImageHeight[]=200px&addImageBorderRadius[]=15&addImage[]=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F0%2F08%2FKoala_sleeping_in_tree.jpg&addImageDiv[]=div3&addImageDisplay[]=block&addImageWidth[]=90%25&addImageHeight[]=180px&addImageBorderRadius[]=20&addImage[]=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F1%2F14%2FKoala_close_up.jpg&addImageDiv[]=div3&addImageDisplay[]=block&addImageWidth[]=70%25&addImageHeight[]=140px&addImageBorderRadius[]=25",
-    //     "useStandardMeasurement": "false",
-    //     "mainPageLang": "sv",
-    //     "secondaryPageLang": "en",
-    //     "StyletextInfoRubrik1": "font-size:36px;color:#005500;",
-    //     "StyletextInfoRubrik2": "font-size:28px;color:#006633;",
-    //     "StyletextInfoRubrik3": "font-size:24px;color:green;",
-    //     "StyletextInfo1": "font-size:18px;color:#003300;",
-    //     "StyletextInfo2": "font-size:16px;color:#666600;",
-    //     "StyletextInfo3": "font-size:18px;color:#ff6600;",
-    //     "StyletextInfo4": "font-size:16px;color:#005500;",
-    //     "StyletextInfo5": "font-size:14px;",
-    //     "Styleimage1": "width:100%;height:250px;border-radius:10;display:block;",
-    //     "Styleimage2": "width:80%;height:200px;border-radius:15;display:block;",
-    //     "Styleimage3": "width:90%;height:180px;border-radius:20;display:block;",
-    //     "Styleimage4": "width:70%;height:140px;border-radius:25;display:block;",
-    //     "Stylediv1": "width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;",
-    //     "Stylediv1div1": "width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:row;",
-    //     "Stylediv1div2": "width:80%;height:250px;display:flex;background-color:#ffe4b5;flex-flow:column;",
-    //     "div1textInfoRubrik1_sv": "Koalor – Allmänt",
-    //     "div1textInfoRubrik1_en": "Koalas – General",
-    //     "div1div1textInfoRubrik2_sv": "Fakta om Koalor",
-    //     "div1div1textInfoRubrik2_en": "Facts about Koalas",
-    //     "div1div2textInfoRubrik3_sv": "Roliga fakta",
-    //     "div1div2textInfoRubrik3_en": "Fun facts",
-    //     "div1textInfo1_sv": "Koalor är små tåliga trädlevande djur från Australien.",
-    //     "div1textInfo1_en": "Koalas are small, hardy, arboreal animals from Australia.",
-    //     "div1div1textInfo2_sv": "De är kända för att äta eukalyptusblad.",
-    //     "div1div1textInfo2_en": "They are known to eat eucalyptus leaves.",
-    //     "div1div1textInfo3_sv": "Koalor äter nästan uteslutande eukalyptusblad.",
-    //     "div1div1textInfo3_en": "Koalas eat almost exclusively eucalyptus leaves.",
-    //     "div1div2textInfo4_sv": "Koalor sover upp till 20 timmar per dag.",
-    //     "div1div2textInfo4_en": "Koalas sleep up to 20 hours per day.",
-    //     "div1div2textInfo5_sv": "Koalor har starka klor för att klättra i träd.",
-    //     "div1div2textInfo5_en": "Koalas have strong claws for climbing trees.",
-    //     "div1div2textInfo6_sv": "Koalor kommunicerar med olika ljud, från snarkningar till skrik.",
-    //     "div1div2textInfo6_en": "Koalas communicate with a variety of sounds, from snoring to screaming.",
-    //     "div1div2textInfo7_sv": "test",
-    //     "div1div2textInfo7_en": "test",
-    //     "div1image1": "https:\/\/upload.wikimedia.org\/wikipedia\/commons\/4\/49\/Koala_climbing_tree.jpg",
-    //     "div1div1image2": "https:\/\/upload.wikimedia.org\/wikipedia\/commons\/e\/e9\/Koala_eating_eucalyptus_leaf.jpg",
-    //     "div1div2image3": "https:\/\/upload.wikimedia.org\/wikipedia\/commons\/0\/08\/Koala_sleeping_in_tree.jpg",
-    //     "div1div2image4": "https:\/\/upload.wikimedia.org\/wikipedia\/commons\/1\/14\/Koala_close_up.jpg"
-    // }
-    // `;
-
-    (async () => {
-        console.log("Testing GetPage...");
-        const res = await frapi.GetPage("page1");
-        console.log(res);
-      
-        // console.log("Testing RemovePage...");
-        // const res = await frapi.RemovePage("page146");
-      
-        // console.log("Testing CreatePage...");
-        // const res = await frapi.CreatePageUsingHtml(html, "TestPageFromElectron x3");
-
-        // console.log("Testing ReplacePage...");
-        // const res = await frapi.ReplacePageUsingHtml("page148", html, "TestPageFromElectron x3 - Replaced");
-
-        // console.log("Testing JsonToUrl... (with urlencodeBrackets = false)");
-        // const res = frapi.JsonToUrl(JSON.parse(jsonstr), true, false);
-
-        // console.log("Testing JsonToUrl... (with urlencodeBrackets = true)");
-        // const res = frapi.JsonToUrl(JSON.parse(jsonstr), true, true);
-
-        // console.log("Testing JsonToUrl... (with procspaces = false)");
-        // const res = frapi.JsonToUrl(JSON.parse(jsonstr), true, false, false);
-
-        // console.log("Testing JsonToUrl... (with procspaces = true)");
-        // const res = frapi.JsonToUrl(JSON.parse(jsonstr), true, false, true);
-
-        // console.log("Result:", res);
-
-        // const html = frapi.JsonToHTML(res);
-        // console.log(html);
-
-
-        // Get page page29 with "en"
-        // const htmlen = await frapi.GetPageAsHtml("page29", "en");
-        //console.log(htmlen);
-        // const jsonen = frapi.HtmlToJson(htmlen, "TestPageFromElectron", "en");
-        // console.log(jsonen);
-        // const urlen = frapi.JsonToUrl(jsonen);
-        // console.log(urlen);
-
-        // Create a new page using html
-        // const res = await frapi.CreatePageUsingHtml(htmlen, "TestPageFromElectron - Created from page29 in English x3", "en");
-        // console.log(res);
-
-        // Replace an existing page using html (english page32)
-        // const res = await frapi.ReplacePageUsingHtml("page35", html, "TestPageFromElectron - REPLACED x3", "sv");
-        // console.log(res);
-
-        // Test page with special characters (page50)
-        // html = `
-        // <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
-        //     <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
-        //     <p style="font-size:18px;color:#003300;"><>&"'.=;#%/\\[]%\`\´</p>
-        // </div>
-        // `;
-
-        // const json = frapi.HtmlToJson(html, "TestPageFromElectron - Special Characters x7", "sv", false);
-        // const res = await frapi.CreatePage(json);
-        // console.log(res);
-    })();
 
 })

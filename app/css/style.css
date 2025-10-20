@@ -19,6 +19,18 @@
     display: none;
 }
 
+[data-page="editor-edit"] .on-viewer:not(.on-editor):not(.on-editor-edit),
+[data-page="editor-edit"] .on-editor-create:not(.on-editor):not(.on-editor-edit),
+[data-page="editor-edit"] .on-pages:not(.on-editor):not(.on-editor-edit) {
+    display: none;
+}
+
+[data-page="editor-create"] .on-viewer:not(.on-editor):not(.on-editor-create),
+[data-page="editor-create"] .on-editor-edit:not(.on-editor):not(.on-editor-create),
+[data-page="editor-create"] .on-pages:not(.on-editor):not(.on-editor-create) {
+    display: none;
+}
+
 [data-page="viewer"] .on-editor:not(.on-viewer),
 [data-page="viewer"] .on-editor-edit:not(.on-viewer),
 [data-page="viewer"] .on-editor-create:not(.on-viewer),
@@ -223,8 +235,15 @@ textarea, iframe {
 .previews {
     background-color: var(--preview-card-background);
     width: 15rem;
-    height: 15rem;
+    height: 10rem;
+
+    padding: .8rem;
+    border-radius: var(--medium-border-radius);
     margin: var(--page-gap-width);
+}
+
+.previews > h2 {
+    margin: 0.5rem;
 }
 
 #view-container {
@@ -240,6 +259,14 @@ textarea, iframe {
 }
 
 
+
+#previews-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    justify-content: center;
+}
 
 /* MARK: Use rem? */
 
