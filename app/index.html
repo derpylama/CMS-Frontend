@@ -21,13 +21,13 @@
         <script src="js/eses_ext.js"></script>
         <script src="js/renderer.js" defer></script>
 
-        <title>Hello from Electron renderer!</title>
+        <title>SmØrig CMS Frontend</title>
     </head>
 
     <body>
         <header>
             <nav id="header-left">
-                <h1 class="on-pages">Smörig CMS</h1>
+                <h1 class="on-pages">CMS Frontend</h1>
                 <button id="nav-go-back" class="on-viewer on-editor">Go Back</button>
                 <input type="checkbox" id="nav-toggle-viewer-editor" class="on-viewer on-editor">
             </nav>
@@ -48,11 +48,11 @@
                 <div id="content-container"></div>
             </section>
 
-            <section id="page-editor" class="on-editor">
+            <section id="page-editor" class="on-editor vflex">
                 <div class="hflex">
                     <label>Header:</label>
                     <input type="text" id="editor-input-header">
-                    <select id="editor-select-lang">
+                    <select id="editor-select-lang" class="on-editor-create">
                         <option value="en">English</option>
                         <option value="sv">Svenska</option>
                     </select>
@@ -71,6 +71,10 @@
                             <iframe id="editor-preview"></iframe>
                         </div>
                     </div>
+                </div>
+                <div class="hflex">
+                    <button id="editor-cancel">Cancel</button>
+                    <button id="editor-save">Save</button>
                 </div>
             </section>
         

@@ -42,7 +42,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     navToggleViewerEditor.addEventListener("change", async (e) => {
         if (navToggleViewerEditor.checked) {
             // Changes to editor mode
-            document.documentElement.setAttribute("data-page", "editor");
+            document.documentElement.setAttribute("data-page", "editor-edit");
         } else {
             // Changes to viewer mode
             document.documentElement.setAttribute("data-page", "viewer");
@@ -50,13 +50,30 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     });
 
     navCreatePageBtn.addEventListener("click", async (e) => {
-        document.documentElement.setAttribute("data-page", "editor");
+        document.documentElement.setAttribute("data-page", "editor-create");
     });
 
     navGoBackBtn.addEventListener("click", async (e) => {
         if (document.documentElement.getAttribute("data-page") !== "pages") {
             document.documentElement.setAttribute("data-page", "pages");
         }
+    });
+
+    // Editor navigaton
+    const editorCancelBtn = document.getElementById("editor-cancel");
+    editorCancelBtn.addEventListener("click", async (e) => {
+        document.documentElement.setAttribute("data-page", "pages");
+    });
+    const editorSaveBtn = document.getElementById("editor-save");
+    editorSaveBtn.addEventListener("click", async (e) => {
+        const editorInputHeader = document.getElementById("editor-input-header");
+        const editorSelectLang = document.getElementById("editor-select-lang");
+        const editorHtml = document.getElementById("editor-html");
+
+        // MARK: Save content here
+
+        // Get content
+        document.documentElement.setAttribute("data-page", "pages");
     });
 
     // Load previews
