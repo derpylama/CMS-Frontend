@@ -9,7 +9,7 @@ ESES Extension
       - p
       - h3
       - div
-      - img
+      - img (with only property "src")
     
     p/h3 CSS Style Properties:
       - font-size
@@ -64,73 +64,35 @@ ESES Extension
                     "<css-property-name>": "<css-property-value>",
                     ...
                 },
-                "content": "<non-text-content>"
+                "content": "<non-text-content>",
+                "isWrapper": <true|false>
             },
             ...
         }
-        //MARK: ^^ Above does not work, nonrepresented must have a parent hiarchy key or simialr to know where they are from? and it must handle when its child or either representable or not 
 
-      But fields ´element`, `attributes`, `styles` and `content` are omitted if they are not relevant to that element.
+      But fields `element`, `attributes`, `styles` and `content` are omitted if they are not relevant to that element. `isWrapper` is only present and true if the element was only added because its parent had to be converted to a div to hold children and this wraps the content, this element can thus be replaced with its own text-content.
 
-    Since we want to maintain readability for non ESES aware clients "prioritized" content/properties are stored in the normal way, example videos:
-        <video controls>
-            <source src="https://example.com/movie.mp4" type="video/mp4">
-            ...content...
-        </video>
-    
-        Is represented as:
-    
-            <p>[Video: https://example.com/movie.mp4]</p>
+    HTML elements can be categorized into one of the following five categories:
+      1. Headers - h1, h2, h4, h5, h6 - Mapped to `h3`
+      2. Text - Al elements that are primarily text-based, ex semantics like `em` or formatters like `b` and `i`. - Mapped to `p`
+      3. Containers - Elements semantic or layouting that contain other elements, ex `main` or `span` - Mapped to `div`
+      4. Represented - Elements who are not supported but can have thier core properties represented as text for non ESES clients, ex `video` who can be represented as `[Video: <source>]` - Mapped to `p`
+      5. NotRepresented - Elements that have no relevant representation outside of ESES, ex `script`, self closing elements or non-content elements are also in this category like `br`, stored fully in ESES.
 
-            {
-                "element": "video",
-                "attributes": {
-                    "controls": ""
-                    "source.type": "video/mp4"
-                },
-                "content": "...content..."
-            }
+    Since we want to maintain readability for non ESES clients we try to map elements to the first three categories when possible, otherwise we try to the "represented" category before falling back to "not represented".
+      Example `<b>bold text</b>` becomes `<p>bold text</p>` with mapping data saying that this hiarchy key is a `b` element.
+      And `<figure><img src="image.jpg"><figcaption>Caption</figcaption></figure>` becomes `<div><img src="image.jpg"><p>Caption</p></div>` with mapping data saying that the hiarchy key of the div is a `figure` element and the hiarchy key of the p is a `figcaption` element.
+      But some elements make more sense to be represented with their content, ex `<video><source src="video.mp4"></video>` becomes `<p>[Video: video.mp4]</p>` combining the <source> element into the representation.
 
-    Whilst elements that have no prioritized properties (the content can't be represented by non ESES aware clients in a way that is relevant) are only included in the ESES data, for example scripts.
+    But since the API only supports child elements under `div` elements any children under non-container elements will have thier parent converted into a div.
+      Example `<h2>Header <em>with emphasis</em></h2>` becomes `<div><h3>Header </h3><p>with emphasis</p></div>` with mapping data saying that the hiarchy key of the div is an `h2` element and the hiarchy key of the p is an `em` element and the hiarchy key of the h3 has "isWrapper" true meaning the h3 can be reduced to their text-content when back-converting.
+      Example `<h2>Header start <em> with emphasis</em> and end</h2>` becomes `<div><h3>Header start </h3><p> with emphasis</p><h3> and end</h3></div>` with mapping data saying that the hiarchy key of the div is an `h2` element, the hiarchy key of the p is an `em` element and both h3 hiarchy keys have "isWrapper" true meaning they can be reduced to their text-content when back-converting.
 
-  HTML elements can be categorized into one of the following five categories:
-    1. Headers - h1, h2, h4, h5, h6 - Mapped to `h3`
-    2. Text - Al elements that are primarily text-based, ex semantics like `em` or formatters like `b` and `i`. - Mapped to `p`
-    3. Containers - Elements semantic or layouting that contain other elements, ex `main` or `span` - Mapped to `div`
-    4. Emulated - Elements who are not directly representable but can have their core properties represented as text for non ESES clients, ex `video` who can be represented as `[Video: <source>]` - Mapped to `p`
-    5. NotRepresented - Elements that have no relevant representation outside of ESES, ex `script`, self closing elements or non-content elements are also in this category like `br`, stored fully in ESES data with "represented" field set to false.
+    When back-converting we use the mapping data to restore the original elements, completely, recursing over and handling "isWrapper" elements by replacing them with their text-content, and restoring attributes, styles and content as needed, aswell as the element type ofcourse.
 
-    Note! If an element mapped as headers or text contains other elements it will be represented as a container (div) this is a preprocess, so later the children will have a "parenttype" field in the ESES mapping data. //MARK: Is this sufficient to ensure data can be roundtripped?
-
-  To map between these we can make a list where each element type is mapped to one of the above categories, if emulated there is also the "emulate" value which is a function that takes the element and returns the string representation.
-
-  Important:
-    - WonkyHTML does only support inline styles so style elements are considered NotRepresented!
-    - DIVs is the only element supported to be nested!
-    - The ESES mapping data must be the first child of the main container div!
-
-  Example WonkyHTML with ESES data:
-    <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
-        <p style="display: none;">ESES1:...base64-encode-of-json...</p>
-        <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
-        <p style="font-size:18px;color:#003300;">Koalor är små tåliga trädlevande djur från Australien.</p>
-        <img style="width:100%;height:250px;height:250;border-radius:10;border-radius:10;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image">
-        <div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:row;">
-            <h3 style="font-size:28px;color:#006633;">Fakta om Koalor</h3>
-            <p style="font-size:16px;color:#666600;">De är kända för att äta eukalyptusblad.</p>
-            <p style="font-size:18px;color:#ff6600;">Koalor äter nästan uteslutande eukalyptusblad.</p>
-            <img style="width:80%;height:200px;height:200;border-radius:15;border-radius:15;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Koala_eating_eucalyptus_leaf.jpg" alt="Image">
-        </div>
-        <div style="width:80%;height:250px;display:flex;background-color:#ffe4b5;flex-flow:column;">
-            <h3 style="font-size:24px;color:green;">Roliga fakta</h3>
-            <p style="font-size:16px;color:#005500;">Koalor sover upp till 20 timmar per dag.</p>
-            <p style="font-size:14px;">Koalor har starka klor för att klättra i träd.</p>
-            <p style="">Koalor kommunicerar med olika ljud, från snarkningar till skrik.</p>
-            <p style="">test</p>
-            <img style="width:90%;height:180px;height:180;border-radius:20;border-radius:20;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/0/08/Koala_sleeping_in_tree.jpg" alt="Image">
-            <img style="width:70%;height:140px;height:140;border-radius:25;border-radius:25;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/1/14/Koala_close_up.jpg" alt="Image">
-        </div>
-    </div>
+    When converting we can use recursion and the bellow elementsMap, if an element type is under "header" and has no child elements we map it to `h3`, if its under "text" and has no child elements we map it to `p`, if its under "container" we map it to `div`,
+      if it has content and is udner "header" or "text" we handle with the "isWrapper" logic.
+    If its under emulated we use the provided function to get its text representation.
 */
 
 class ESESApiExtender {
@@ -183,16 +145,5 @@ class ESESApiExtender {
 
     ToFullHtml(lesserhtml) {
         // We are in the frontend and can use the DOM and `document` variable
-    }
-
-    // Methods that should be drop-in-replacements for WonkyCMSApiHandler but handle the ESES extensionanility
-    // To handle it we first do conversion HTML->WonkyHTML or WonkyHTML->HTML as needed then call the original functions in WonkyCMSApiHandler
-    //   async GetPageAsHtml(pageKey, lang = "sv")
-    //   async CreatePageUsingHtml(html, header, mainPageLang = "sv", useStandardMeasurement = "false")
-    //   async ReplacePageUsingHtml(pageKey, html, header = null)
-    //   async GetAllPagesWithHtml(lang = "sv")
-
-    async RemovePage(pageKey, validate = false) {
-        return await this.api.RemovePage(pageKey, validate);
     }
 }
