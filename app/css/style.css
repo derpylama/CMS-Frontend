@@ -359,3 +359,9 @@ label:has(#nav-toggle-lang) > *:not(:last-child) {
     width: fit-content;
     margin-bottom: 1rem;
 }
+
+#content-container,
+#content-container > *:first-child {
+    height: auto;
+    min-height: calc(100vh - 4rem);
+}
