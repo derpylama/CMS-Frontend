@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld("IPC", {
     createPage: (jsonobj) => ipcRenderer.invoke("create-page", jsonobj),
     fetchAllPages: (filterDeleted) => ipcRenderer("fetch-all-pages", filterDeleted),
     setBaseUrl: (baseUrl) => ipcRenderer("base-url", baseUrl),
+    showChoice: ({ title, message, buttons, defaultId, cancelId }) => ipcRenderer.invoke('show-choice', { title, message, buttons, defaultId, cancelId }),
 });

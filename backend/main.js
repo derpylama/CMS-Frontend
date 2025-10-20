@@ -2,13 +2,16 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const {  WonkyCMSApiWrapper } = require('./api.js');
 const { ConfigManager } = require('./config.js');
 const path = require("node:path");
+const { dialog } = require('electron');
 
 const config = new ConfigManager(false);
 
 const api = new WonkyCMSApiWrapper(config.get("api"));
 
+let win;
+
 function createWindow () {
-    const win = new BrowserWindow({
+    win = new BrowserWindow({
         width: 1280,
         height: 720,
         webPreferences: {
@@ -42,6 +45,19 @@ ipcMain.handle("fetch-all-pages", async (event, filterDeleted) => {
 
 ipcMain.handle("set-base-url", async (event, baseUrl) => {
     return await api.setBaseUrl(baseUrl);
+});
+
+ipcMain.handle('show-choice', async (event, { title, message, buttons, defaultId, cancelId }) => {
+    const result = await dialog.showMessageBox(win, {
+      type: 'question',
+      buttons: buttons,
+      defaultId: defaultId,
+      cancelId: cancelId,
+      title,
+      message,
+    });
+  
+    return result.response;
 });
 
 

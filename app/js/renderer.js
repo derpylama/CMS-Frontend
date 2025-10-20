@@ -8,6 +8,30 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     const navCreatePageBtn = document.getElementById("nav-create-page");
 
     navToggleLang.addEventListener("change", async (e) => {
+        // If in edit ask first
+        if (document.documentElement.getAttribute("data-page") === "editor") {
+            window.IPC.showChoice({
+                "title": "Save before changing language?",
+                "message": "Changing the language will discard unsaved changes. Do you want to save before proceeding?",
+                "buttons": ["Yes", "Cancel"],
+                "defaultId": 0,
+                "cancelId": 1
+            }).then((response) => {
+                // 0 = Yes
+                // 1 = Cancel/ClosedPopup
+
+                if (response === 0) {
+                    // MARK: Save changes
+                } else {
+                    // Revert toggle
+                    navToggleLang.checked = !navToggleLang.checked;
+
+                    // Exit function
+                    return;
+                }
+            });
+        }
+
         if (navToggleLang.checked) {
             document.documentElement.setAttribute("data-lang", "sv");
         } else {
