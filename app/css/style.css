@@ -178,7 +178,7 @@ textarea, iframe {
 
 .checkbox-button:has(input[type="checkbox"]:checked) > .swe-lang,
 .checkbox-button:has(input[type="checkbox"]:not(:checked)) > .eng-lang {
-    background: repeating-conic-gradient(in hsl longer hue, rgb(255, 0, 0), rgb(0, 0, 255), rgb(255,0,0)0.001deg);
+
     background-color: black;
     color: #fff;
 
