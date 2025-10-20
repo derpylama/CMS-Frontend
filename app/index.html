@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html data-page="pages" data-lang="en">
+<html data-page="pages" data-lang="en" data-theme="dark">
     <head>
         <meta charset="UTF-8" />
 
         <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
         <meta
           http-equiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self'"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src * data"
         />
         <meta
           http-equiv="X-Content-Security-Policy"
@@ -44,7 +44,7 @@
             </section>
 
             <section id="page-viewer" class="on-viewer">
-                <h2>Title</h2>
+                <h2 id="header">Title</h2>
                 <div id="content-container"></div>
             </section>
 

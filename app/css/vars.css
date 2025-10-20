@@ -1,7 +1,7 @@
-:root {
+[data-theme="light"] {
     --standard-font: Arial, Helvetica, sans-serif;
 
-    --standard-background: rgb(103, 197, 104);
+    --standard-background: rgb(207, 207, 207);
     --secondary-background: rgb(119, 255, 0);
 
     --medium-backdrop-color: rgba(0, 0, 0, 0.4);
@@ -14,7 +14,7 @@
     --medium-border-radius: 1rem;
 
     --standard-gap-width: 1.5rem;
-    --page-gap-width: 2rem;
+    --page-gap-width: 1rem;
 
     --highlighted-color: rgb(255, 0, 0);
     --highlighted-border-width: 0.4rem;
@@ -24,4 +24,32 @@
     --li-background-hover: rgba(0, 0, 0, 0.2);
 
     --preview-card-background: rgb(180, 180, 180);
+}
+
+[data-theme="dark"] {
+    --standard-font: Arial, Helvetica, sans-serif;
+
+    --standard-background: #181818;
+    --secondary-background: rgb(119, 255, 0);
+
+    --medium-backdrop-color: rgba(0, 0, 0, 0.4);
+    --light-backdrop-color: rgba(0, 0, 0, 0.2);
+
+    --standard-font-color: #d6d7e2;
+    --standard-border-color: rgba(0, 0, 0, 0.8);
+    --standard-border-width: 0.2rem;
+
+    --medium-border-radius: 1rem;
+
+    --standard-gap-width: 1.5rem;
+    --page-gap-width: 1rem;
+
+    --highlighted-color: rgb(255, 0, 0);
+    --highlighted-border-width: 0.4rem;
+
+    --focused-border-color: rgb(39, 37, 37);
+
+    --li-background-hover: rgba(0, 0, 0, 0.2);
+
+    --preview-card-background: #242424;
 }

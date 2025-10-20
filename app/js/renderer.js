@@ -61,13 +61,22 @@ window.addEventListener("DOMContentLoaded", async (e) => {
 
     // Load previews
     const previewContainer = document.getElementById("previews-container");
+    const header = document.getElementById("header");
+    const contentCon = document.getElementById("content-container")
     var previews = await frapi.GetPreviewOfPages();
 
     for (const [key, contentPreview] of Object.entries(previews)) {
         const div = document.createElement("div");
-        div.classList.add("previews")
+        div.classList.add("previews");
+        div.dataset.id = key;
 
         div.addEventListener("click", async (e) => {
+            const data = await frapi.GetPage(key);
+            
+            header.innerText = data.header;
+            
+            contentCon.innerHTML = frapi.JsonToHtml(data, document.documentElement.dataset.lang);
+            
             document.documentElement.setAttribute("data-page", "viewer");
         });
 
@@ -157,9 +166,9 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     // `;
 
     (async () => {
-        console.log("Testing GetPage...");
-        const res = await frapi.GetPage("page1");
-        console.log(res);
+        // console.log("Testing GetPage...");
+        // const res = await frapi.GetPage("page1");
+        // console.log(res);
       
         // console.log("Testing RemovePage...");
         // const res = await frapi.RemovePage("page146");
