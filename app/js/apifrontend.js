@@ -272,6 +272,7 @@ class WonkyCMSApiHandlerFrontend extends WonkyCMSApiWrapperFrontend {
 
     async ReplacePageUsingHtml(pageKey, html, header = null, lang = null, escapeUnhandled = false) {
         // Ensure pageKey exists in FetchAllPages else return null
+
         const allPages = await this.FetchAllPages(false); // Fetch all including deleted
         if (!allPages.hasOwnProperty(pageKey)) {
             throw new PageNotFoundError();
@@ -296,8 +297,10 @@ class WonkyCMSApiHandlerFrontend extends WonkyCMSApiWrapperFrontend {
         useStandardMeasurement = (useStandardMeasurement === true || String(useStandardMeasurement).toLowerCase() === "true") ? true : false;
 
         const jsonobj = this.HtmlToJson(html, header, lang, escapeUnhandled, useStandardMeasurement);
+        
 
         const newPageKey = await this.CreatePage(jsonobj, header);
+        
 
         if (newPageKey === null) {
             return null; // Creation failed

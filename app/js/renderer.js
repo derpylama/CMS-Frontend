@@ -58,7 +58,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
 
         var html = frapi.JsonToHtml(data, lang);
         contentCon.innerHTML = html;
-        editorHtml.innerHTML = html;
+        editorHtml.value = html;
         editorInputHeader.value = data.header;
     }
 
@@ -115,8 +115,13 @@ window.addEventListener("DOMContentLoaded", async (e) => {
 
                 if (response === 0) {
                     // MARK: Save changes
+                    // update document.documentElement.dataset.openpage with new page id
+                    var newPageId = await frapi.ReplacePageUsingHtml(document.documentElement.dataset.openpage, editorHtml.value, ((editorInputHeader.value === null || editorInputHeader.value.trim() === "") ? null : editorInputHeader.value.trim()), navToggleLang.checked ? "sv" : "en");
+                    console.log(frapi.HtmlToJson(editorHtml.value, editorInputHeader.value))
+                    
+                    document.documentElement.dataset.openpage = newPageId;
                     // Switch language
-                    await loadViewer(document.documentElement.dataset.openpage, navToggleLang.checked ? "sv" : "en");
+                    await loadViewer(newPageId, navToggleLang.checked ? "sv" : "en");
                     editorPreview.srcdoc = editorHtml.value;
                 } else {
                     // Switch language
@@ -236,7 +241,11 @@ window.addEventListener("DOMContentLoaded", async (e) => {
             }
 
             // MARK: Save changes
-
+            // update document.documentElement.dataset.openpage with new page id
+            var newPageId = await frapi.ReplacePageUsingHtml(document.documentElement.dataset.openpage, editorHtml.value, ((editorInputHeader.value === null || editorInputHeader.value.trim() === "") ? null : editorInputHeader.value.trim()), navToggleLang.checked ? "sv" : "en");
+            console.log(frapi.HtmlToJson(editorHtml.value, editorInputHeader.value))
+                    
+            document.documentElement.dataset.openpage = newPageId;
             // Return to pages
             await loadViewer(document.documentElement.dataset.openpage, document.documentElement.dataset.lang);
             navToggleViewerEditor.checked = false;
