@@ -298,96 +298,326 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     await loadPreviews(document.documentElement.dataset.lang);
 
 
+    function updatePreview(html) {
+        editorPreview.srcdoc = html;
+    }
 
+    //MARK: Validator 
 
+    function getLineAndColumnFromIndex(text, index) {
+        const lines = text.split(/\n/);
+        let currentIndex = 0;
 
-
-// HTML validation function
-function validateHtml(html) {
-    const allowedTags = new Set(["div", "p", "h3", "img"]);
-    const allowedCSS = {
-      p: new Set(['font-size', 'color', 'display', 'font-family', 'font-weight', 'font-style', 'text-decoration', 'text-transform']),
-      h3: new Set(['font-size', 'color', 'display', 'font-family', 'font-weight', 'font-style', 'text-decoration', 'text-transform']),
-      div: new Set(['width', 'height', 'display', 'background-color', 'flex-flow', 'align-items', 'justify-content', 'border', 'border-radius', 'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'background-image']),
-      img: new Set(['width', 'height', 'border-radius', 'display'])
-    };
-  
-
-    const errors = [];
-    const lines = html.split(/\n/);
-  
-    lines.forEach((line, rowIndex) => {
-      const tagRegex = /<\s*(\/?)([a-zA-Z0-9-]+)([^>]*)>/g;
-      let match;
-  
-      while ((match = tagRegex.exec(line))) {
-        const tag = match[2].toLowerCase();
-  
-        // ❌ Invalid tag
-        if (!allowedTags.has(tag)) {
-          errors.push({
-            type: "invalid-tag",
-            message: `Tag <${tag}> is not allowed.`,
-            line: rowIndex + 1,
-            startColumn: match.index + 1,
-            endColumn: match.index + match[0].length + 1
-          });
-        }
-  
-        // Invalid style
-        const styleMatch = /style\s*=\s*"([^"]*)"/.exec(match[3]);
-        if (styleMatch) {
-          const styles = styleMatch[1]
-            .split(";")
-            .map((s) => s.trim())
-            .filter(Boolean);
-  
-          for (const s of styles) {
-            const [prop] = s.split(":").map((x) => x.trim());
-            if (!allowedCSS[tag]?.has(prop)) {
-              const col = match.index + match[0].indexOf(prop);
-              errors.push({
-                type: "invalid-style",
-                message: `CSS property "${prop}" not allowed on <${tag}>.`,
-                line: rowIndex + 1,
-                startColumn: col + 1,
-                endColumn: col + prop.length + 1
-              });
+        for (let i = 0; i < lines.length; i++) {
+            const lineLength = lines[i].length + 1; // +1 for '\n'
+            if (index < currentIndex + lineLength) {
+                return {
+                    lineNumber: i + 1,
+                    column: index - currentIndex + 1
+                };
             }
-          }
+            currentIndex += lineLength;
         }
-      }
+
+        // Fallback to last line
+        const lastLine = lines.length;
+        return {
+            lineNumber: lastLine,
+            column: lines[lastLine - 1].length + 1
+        };
+    }
+
+    // Main HTML validation function
+    function validateHtml(html) {
+        const errors = [];
+
+        // Collect errors from specialized validators
+        errors.push(...validateTags(html));
+        errors.push(...validateInlineStyles(html));
+        errors.push(...validateTextContent(html));
+
+        // Later you can add more, like:
+        // errors.push(...validateAttributes(html));
+        // errors.push(...validateNesting(html));
+
+        return errors;
+    }
+
+    function validateTextContent(html) {
+        const errors = [];
+        const tagRegex = /<\s*(\/?)([a-zA-Z0-9-]+)([^>]*)>/g;
+        let match;
+        let lastIndex = 0;
+        const openTags = [];
+
+        while ((match = tagRegex.exec(html))) {
+            const textContent = html.slice(lastIndex, match.index);
+            const trimmedText = textContent.trim();
+
+            // Only check text if it’s non-empty
+            if (trimmedText.length > 0) {
+                const parentTag = openTags.length ? openTags[openTags.length - 1] : null;
+                if (!parentTag || !["p", "h3"].includes(parentTag.tag)) {
+                    const start = getLineAndColumnFromIndex(html, lastIndex);
+                    const end = getLineAndColumnFromIndex(html, match.index);
+                    errors.push({
+                        type: "invalid-text",
+                        message: `Text must only be inside <p> or <h3> tags.`,
+                        startLineNumber: start.lineNumber,
+                        startColumn: start.column,
+                        endLineNumber: end.lineNumber,
+                        endColumn: end.column,
+                        severity: monaco.MarkerSeverity.Error
+                    });
+                }
+            }
+
+            // Track opening/closing tags
+            const isClosing = match[1] === "/";
+            const tag = match[2].toLowerCase();
+            if (!isClosing && tag !== "img") {
+                openTags.push({ tag });
+            } else if (isClosing) {
+                const lastOpen = openTags.findLast(t => t.tag === tag);
+                if (lastOpen) openTags.splice(openTags.indexOf(lastOpen), 1);
+            }
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        // Check any remaining text after the last tag
+        const remainingText = html.slice(lastIndex).trim();
+        if (remainingText.length > 0) {
+            const parentTag = openTags.length ? openTags[openTags.length - 1] : null;
+            if (!parentTag || !["p", "h3"].includes(parentTag.tag)) {
+                const start = getLineAndColumnFromIndex(html, lastIndex);
+                const end = getLineAndColumnFromIndex(html, html.length);
+                errors.push({
+                    type: "invalid-text",
+                    message: `Text must only be inside <p> or <h3> tags.`,
+                    startLineNumber: start.lineNumber,
+                    startColumn: start.column,
+                    endLineNumber: end.lineNumber,
+                    endColumn: end.column,
+                    severity: monaco.MarkerSeverity.Error
+                });
+            }
+        }
+
+        return errors;
+    }
+
+
+    // --- Tag validation ---
+    function validateTags(html) {
+        const allowedTags = new Set(["div", "p", "h3", "img"]);
+        const errors = [];
+        const tagRegex = /<\s*(\/?)([a-zA-Z0-9-]+)([^>]*)>/g;
+        let match;
+
+        const openTags = []; // stack to track unclosed tags
+
+        while ((match = tagRegex.exec(html))) {
+            const fullMatch = match[0];
+            const isClosing = match[1] === "/";
+            const tag = match[2].toLowerCase();
+            const tagStart = match.index;
+            const tagEnd = match.index + fullMatch.length;
+
+            // === 1️⃣ Invalid tag check ===
+            if (!allowedTags.has(tag)) {
+                const start = getLineAndColumnFromIndex(html, tagStart);
+                const end = getLineAndColumnFromIndex(html, tagEnd);
+                errors.push({
+                    type: "invalid-tag",
+                    message: `Tag <${tag}> is not allowed.`,
+                    startLineNumber: start.lineNumber,
+                    startColumn: start.column,
+                    endLineNumber: end.lineNumber,
+                    endColumn: end.column,
+                    severity: monaco.MarkerSeverity.Error
+                });
+                continue;
+            }
+
+            // === 2️⃣ Handle <img> special case ===
+            if (tag === "img" && !isClosing) {
+                // valid if ends with > or /> (self-closing)
+                if (!/\/?>$/.test(fullMatch)) {
+                    const start = getLineAndColumnFromIndex(html, tagStart);
+                    const end = getLineAndColumnFromIndex(html, tagEnd);
+                    errors.push({
+                        type: "unclosed-img",
+                        message: `<img> tag must be self-closed with '>' or '/>'.`,
+                        startLineNumber: start.lineNumber,
+                        startColumn: start.column,
+                        endLineNumber: end.lineNumber,
+                        endColumn: end.column,
+                        severity: monaco.MarkerSeverity.Error
+                    });
+                }
+                continue; // skip normal open/close checks
+            }
+
+            // === 3️⃣ Handle opening and closing tags ===
+            if (!isClosing) {
+                openTags.push({ tag, index: tagStart, matchText: fullMatch });
+            } else {
+                const lastOpen = openTags.findLast(t => t.tag === tag);
+                if (lastOpen) {
+                    openTags.splice(openTags.indexOf(lastOpen), 1);
+
+                    // Check for empty content
+                    const innerContent = html
+                        .slice(lastOpen.index + lastOpen.matchText.length, tagStart)
+                        .trim();
+                    if (innerContent.length === 0) {
+                        const start = getLineAndColumnFromIndex(html, lastOpen.index);
+                        const end = getLineAndColumnFromIndex(html, tagEnd);
+                        errors.push({
+                            type: "empty-tag",
+                            message: `Tag <${tag}> cannot be empty.`,
+                            startLineNumber: start.lineNumber,
+                            startColumn: start.column,
+                            endLineNumber: end.lineNumber,
+                            endColumn: end.column,
+                            severity: monaco.MarkerSeverity.Error
+                        });
+                    }
+                } else {
+                    const start = getLineAndColumnFromIndex(html, tagStart);
+                    const end = getLineAndColumnFromIndex(html, tagEnd);
+                    errors.push({
+                        type: "orphan-close",
+                        message: `Closing tag </${tag}> has no matching opening tag.`,
+                        startLineNumber: start.lineNumber,
+                        startColumn: start.column,
+                        endLineNumber: end.lineNumber,
+                        endColumn: end.column,
+                        severity: monaco.MarkerSeverity.Warning
+                    });
+                }
+            }
+        }
+
+        // === 4️⃣ Check for unclosed tags ===
+        for (const open of openTags) {
+            const start = getLineAndColumnFromIndex(html, open.index);
+            const end = getLineAndColumnFromIndex(html, open.index + open.matchText.length);
+            errors.push({
+                type: "unclosed-tag",
+                message: `Tag <${open.tag}> is missing a closing </${open.tag}>.`,
+                startLineNumber: start.lineNumber,
+                startColumn: start.column,
+                endLineNumber: end.lineNumber,
+                endColumn: end.column,
+                severity: monaco.MarkerSeverity.Warning
+            });
+        }
+
+        return errors;
+    }
+
+
+    // --- Inline style validation ---
+    function validateInlineStyles(html) {
+        const allowedCSS = {
+            p: new Set(['font-size', 'color', 'display', 'font-family', 'font-weight', 'font-style', 'text-decoration', 'text-transform']),
+            h3: new Set(['font-size', 'color', 'display', 'font-family', 'font-weight', 'font-style', 'text-decoration', 'text-transform']),
+            div: new Set(['width', 'height', 'display', 'background-color', 'flex-flow', 'align-items', 'justify-content', 'border', 'border-radius', 'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'background-image']),
+            img: new Set(['width', 'height', 'border-radius', 'display'])
+        };
+
+        const errors = [];
+        const tagRegex = /<\s*(\/?)([a-zA-Z0-9-]+)([^>]*)>/g;
+        let match;
+
+        while ((match = tagRegex.exec(html))) {
+            const tag = match[2].toLowerCase();
+            const styleMatch = /style\s*=\s*"([^"]*)"/.exec(match[3]);
+            if (!styleMatch) continue;
+
+            const styles = styleMatch[1]
+                .split(";")
+                .map(s => s.trim())
+                .filter(Boolean);
+
+            for (const s of styles) {
+                const [prop] = s.split(":").map(x => x.trim());
+                if (!allowedCSS[tag]?.has(prop)) {
+                    const propIndex = html.indexOf(prop, match.index);
+                    const start = getLineAndColumnFromIndex(html, propIndex);
+                    const end = getLineAndColumnFromIndex(html, propIndex + prop.length);
+                    errors.push({
+                        type: "invalid-style",
+                        message: `CSS property "${prop}" not allowed on <${tag}>.`,
+                        startLineNumber: start.lineNumber,
+                        startColumn: start.column,
+                        endLineNumber: end.lineNumber,
+                        endColumn: end.column,
+                        severity: monaco.MarkerSeverity.Error
+                    });
+                }
+            }
+        }
+
+        return errors;
+    }
+
+
+
+
+
+    //monaco editor creation //MARK: Monaco loader 
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+        editor = monaco.editor.create(document.getElementById('editor-html-container'), {
+            value: `No value loaded.`,
+            language: "html",
+            theme: (document.documentElement.dataset.theme === "dark" ? "vs-dark" : "vs"),
+            automaticLayout: true,
+            fontSize: 14,
+            minimap: { enabled: true }
+        });
+
+
+        // Debounce helper function to limit validation frequency
+        function debounce(fn, delay) {
+            let timer;
+            return function (...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        // Debounced validation
+        const runValidation = debounce(() => {
+            const value = editor.getValue();
+            const errors = validateHtml(value);
+
+            // Set Monaco markers
+            const markers = errors.map(err => ({
+                startLineNumber: err.startLineNumber,
+                startColumn: err.startColumn,
+                endLineNumber: err.endLineNumber,
+                endColumn: err.endColumn,
+                message: err.message,
+                severity: err.severity
+            }));
+            monaco.editor.setModelMarkers(editor.getModel(), "html-validator", markers);
+
+            // Only update preview if there are no errors
+            if (errors.length === 0) {
+                updatePreview(value); // pass the current HTML
+            }
+        }, 300);
+
+        // Trigger validation on editor changes
+        editor.onDidChangeModelContent(runValidation);
+
+        // Optionally run validation once on load
+        runValidation();
     });
-  
-    return errors;
-  }
-
-  console.log(document.documentElement.dataset.theme);
-
-
-  //monaco editor creation
-  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs' }});
-  require(['vs/editor/editor.main'], function() {
-     editor =monaco.editor.create(document.getElementById('editor-html-container'), {
-        value: `<div>\n  <h4 style="font-weight:bold;">Example</h4>\n</div>`,
-        language: "html",
-        theme: (document.documentElement.dataset.theme === "dark" ? "vs-dark" : "vs"),
-        automaticLayout: true,
-        fontSize: 14,
-        minimap: { enabled: false }
-    });
-
-      // Validate on change
-    editor.onDidChangeModelContent(() => {
-        const value = editor.getValue();
-        //console.log(value);
-        const errors = validateHtml(value);
-        console.log(errors);
-        editorPreview.srcdoc = value;
-      
-  });
-  
-});
 
 
 
