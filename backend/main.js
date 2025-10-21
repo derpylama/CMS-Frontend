@@ -13,7 +13,7 @@ let win;
 function getPreferedThemeFromConfig() {
     if (config.has("theme")) {
         const theme = config.get("theme");
-        if (theme === "light" || theme === "dark") {
+        if (theme === "light" || theme === "dark" || theme === "rainbow") {
             return theme;
         }
 
