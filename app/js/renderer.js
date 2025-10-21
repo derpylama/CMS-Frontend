@@ -38,6 +38,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     const editorInputHeader = document.getElementById("editor-input-header");
     const editorHtml = document.getElementById("editor-html");
     const editorPreview = document.getElementById("editor-preview");
+    const editorDeletePage = document.getElementById("editor-delete-page");
 
     async function loadViewer(key, lang) {
         document.documentElement.dataset.openpage = key;
@@ -243,6 +244,41 @@ window.addEventListener("DOMContentLoaded", async (e) => {
             document.documentElement.setAttribute("data-page", "viewer");
             window.scrollTo(0, 0); // Scroll to page top
         }
+    });
+
+    editorDeletePage.addEventListener("click", async (e) => {
+        // Confirm deletion
+        window.IPC.showChoice({
+            "title": "Confirm Deletion",
+            "message": "Are you sure you want to delete this page? This action cannot be undone.",
+            "buttons": ["Delete", "Cancel"],
+            "defaultId": 1,
+            "cancelId": 1
+        }).then(async (response) => {
+            // 0 = Delete
+            // 1 = Cancel/ClosedPopup
+
+            if (response === 0) {
+                // Delete page
+                try {
+                    await frapi.RemovePage(document.documentElement.dataset.openpage, true);
+                } catch (err) {
+                    alertW("Error deleting page: " + err.message);
+                    return;
+                }
+
+                // Return to pages
+                const titleElement = document.getElementsByTagName("title")[0];
+                window.IPC.setWindowTitle(titleElement.innerText);
+
+                await loadPreviews(document.documentElement.dataset.lang); // Load previews
+                document.documentElement.setAttribute("data-page", "pages");
+                window.scrollTo(0, 0); // Scroll to page top
+            } else {
+                // Do nothing
+                return;
+            }
+        });
     });
 
     // Load previews
