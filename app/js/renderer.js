@@ -1,5 +1,5 @@
 const frapi = new WonkyCMSApiHandlerFrontend();
-
+let editor;
 function alertW(msg) {
     window.IPC.showChoice({
         "title": "CMS Frontend",
@@ -26,6 +26,11 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         if (preferedTheme === "system") {
             document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
+            
+            if (editor){
+                monaco.editor.setTheme(e.matches ? "vs-dark" : "vs");
+            }
+            
         }
     });
 
@@ -60,7 +65,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
 
         var html = frapi.JsonToHtml(data, lang);
         contentCon.innerHTML = html;
-        editorHtml.value = html;
+        editor.setValue(html);
         editorInputHeader.value = data.header;
     }
 
@@ -97,10 +102,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
         }
     }
 
-    // when value of editorHtml changes set editorPreview.srcdoc to it
-    editorHtml.addEventListener("input", (e) => {
-        editorPreview.srcdoc = editorHtml.value;
-    });
+
 
     navToggleLang.addEventListener("change", async (e) => {
         // If in edit ask first
@@ -123,12 +125,12 @@ window.addEventListener("DOMContentLoaded", async (e) => {
                     
                     document.documentElement.dataset.openpage = newPageId;
                     // Switch language
-                    await loadViewer(newPageId, navToggleLang.checked ? "sv" : "en");
-                    editorPreview.srcdoc = editorHtml.value;
+                    await loadViewer(document.documentElement.dataset.openpage, navToggleLang.checked ? "sv" : "en");
+                    editorPreview.srcdoc = editor.getValue()
                 } else {
                     // Switch language
                     await loadViewer(document.documentElement.dataset.openpage, navToggleLang.checked ? "sv" : "en");
-                    editorPreview.srcdoc = editorHtml.value;
+                    editorPreview.srcdoc = editor.getValue()
                 }
             });
         }
@@ -154,7 +156,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
         if (navToggleViewerEditor.checked) {
             // Changes to editor mode
             navToggleViewerEditorLabel.innerText = "Viewer";
-            editorPreview.srcdoc = editorHtml.value;
+            editorPreview.srcdoc = editor.getValue()
             editorSaveBtn.innerText = "Save changes";
             document.documentElement.setAttribute("data-page", "editor-edit");
             window.scrollTo(0, 0); // Scroll to page top
@@ -167,7 +169,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     });
 
     navCreatePageBtn.addEventListener("click", async (e) => {
-        editorHtml.value = "";
+        editor.setValue("");
         editorInputHeader.value = "";
         editorSaveBtn.innerText = "Create page";
         document.documentElement.setAttribute("data-page", "editor-create");
@@ -220,7 +222,7 @@ window.addEventListener("DOMContentLoaded", async (e) => {
             // Save page
             try {
                 await frapi.CreatePageUsingHtml(
-                    editorHtml.value,
+                    editor.getValue(),
                     editorInputHeader.value.trim(),
                     editorSelectLang.value
                 );
@@ -294,6 +296,104 @@ window.addEventListener("DOMContentLoaded", async (e) => {
 
     // Load previews
     await loadPreviews(document.documentElement.dataset.lang);
+
+
+
+
+
+
+// HTML validation function
+function validateHtml(html) {
+    const allowedTags = new Set(["div", "p", "h3", "img"]);
+    const allowedCSS = {
+      p: new Set(['font-size', 'color', 'display', 'font-family', 'font-weight', 'font-style', 'text-decoration', 'text-transform']),
+      h3: new Set(['font-size', 'color', 'display', 'font-family', 'font-weight', 'font-style', 'text-decoration', 'text-transform']),
+      div: new Set(['width', 'height', 'display', 'background-color', 'flex-flow', 'align-items', 'justify-content', 'border', 'border-radius', 'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right', 'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'background-image']),
+      img: new Set(['width', 'height', 'border-radius', 'display'])
+    };
+  
+
+    const errors = [];
+    const lines = html.split(/\n/);
+  
+    lines.forEach((line, rowIndex) => {
+      const tagRegex = /<\s*(\/?)([a-zA-Z0-9-]+)([^>]*)>/g;
+      let match;
+  
+      while ((match = tagRegex.exec(line))) {
+        const tag = match[2].toLowerCase();
+  
+        // ❌ Invalid tag
+        if (!allowedTags.has(tag)) {
+          errors.push({
+            type: "invalid-tag",
+            message: `Tag <${tag}> is not allowed.`,
+            line: rowIndex + 1,
+            startColumn: match.index + 1,
+            endColumn: match.index + match[0].length + 1
+          });
+        }
+  
+        // Invalid style
+        const styleMatch = /style\s*=\s*"([^"]*)"/.exec(match[3]);
+        if (styleMatch) {
+          const styles = styleMatch[1]
+            .split(";")
+            .map((s) => s.trim())
+            .filter(Boolean);
+  
+          for (const s of styles) {
+            const [prop] = s.split(":").map((x) => x.trim());
+            if (!allowedCSS[tag]?.has(prop)) {
+              const col = match.index + match[0].indexOf(prop);
+              errors.push({
+                type: "invalid-style",
+                message: `CSS property "${prop}" not allowed on <${tag}>.`,
+                line: rowIndex + 1,
+                startColumn: col + 1,
+                endColumn: col + prop.length + 1
+              });
+            }
+          }
+        }
+      }
+    });
+  
+    return errors;
+  }
+
+  console.log(document.documentElement.dataset.theme);
+
+
+  //monaco editor creation
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs' }});
+  require(['vs/editor/editor.main'], function() {
+     editor =monaco.editor.create(document.getElementById('editor-html-container'), {
+        value: `<div>\n  <h4 style="font-weight:bold;">Example</h4>\n</div>`,
+        language: "html",
+        theme: (document.documentElement.dataset.theme === "dark" ? "vs-dark" : "vs"),
+        automaticLayout: true,
+        fontSize: 14,
+        minimap: { enabled: false }
+    });
+
+      // Validate on change
+    editor.onDidChangeModelContent(() => {
+        const value = editor.getValue();
+        //console.log(value);
+        const errors = validateHtml(value);
+        console.log(errors);
+        editorPreview.srcdoc = value;
+      
+  });
+  
+});
+
+
+
+})
+
+
 
 //     const example = `
 // {

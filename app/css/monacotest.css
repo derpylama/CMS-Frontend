@@ -1,0 +1,13 @@
+#editor-html-container{
+    height: 100%;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+.page-create-edit-container,
+.equal-width-flexbox,
+.text-container,
+#editor-html-container {
+    flex-shrink: 1;
+    min-width: 0;  /* critical for shrinking in flex */
+}

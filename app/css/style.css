@@ -218,6 +218,7 @@ textarea, iframe {
     display: block;
     border: solid var(--standard-border-width) var(--button-border-color);
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -227,6 +228,7 @@ textarea, iframe {
 }
 
 #editor-html {
+    display: none;
     padding: var(--standard-gap-width);
 }
 
