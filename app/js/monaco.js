@@ -69,13 +69,27 @@ function validateHtml(html) {
         fontSize: 14,
         minimap: { enabled: false }
     });
+
+// Fix: Explicitly force layout when container size changes
+const resizeObserver = new ResizeObserver(() => {
+  editor.layout();
+});
+resizeObserver.observe(container);
+
+// Optional fallback for window resizing
+window.addEventListener('resize', () => editor.layout());
+
+
     editor.onDidChangeModelContent(() => {
         const value = editor.getValue();
         const errors = validateHtml(value);
         console.log(errors);
       
   });
+ 
+
 });
+
 // Create Monaco editor
 /* const editor = monaco.editor.create(document.getElementById("editor-html-container"), {
   value: `<div>\n  <h4 style="font-weight:bold;">Example</h4>\n</div>`,

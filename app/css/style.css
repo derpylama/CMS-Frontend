@@ -211,10 +211,12 @@ textarea, iframe {
     border: solid var(--standard-border-width);
     
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
 }
 
 #editor-html {
+    display: none;
     padding: var(--standard-gap-width);
 }
 

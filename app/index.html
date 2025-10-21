@@ -5,9 +5,17 @@
 
         <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
         <meta
-          http-equiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src * data"
-        />
+        http-equiv="Content-Security-Policy"
+        content="
+          default-src 'self';
+          script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' blob:;
+          style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+          worker-src 'self' blob:;
+          img-src 'self' data:;
+          connect-src 'self' https://cdn.jsdelivr.net;
+        "
+      />
+      
         <meta
           http-equiv="X-Content-Security-Policy"
           content="default-src 'self'; script-src 'self'"
@@ -16,10 +24,13 @@
         <link rel="stylesheet" type="text/css" href="css/vars.css">
         <link rel="stylesheet" type="text/css" href="css/style.css">
         <link rel="stylesheet" type="text/css" href="css/general.css">
+        <link rel="stylesheet" type="text/css" href="css/monacotest.css">
 
+        <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/loader.js"></script>
         <script src="js/apifrontend.js"></script>
         <script src="js/eses_ext.js"></script>
         <script src="js/renderer.js" defer></script>
+        <script src="js/monaco.js" defer></script>
 
         <title>SmØrig CMS Frontend</title>
     </head>
@@ -71,6 +82,7 @@
                         <h3>HTML</h3>
                         <div class="text-container">
                             <textarea id="editor-html" spellcheck="false"></textarea>
+                            <div id="editor-html-container"></div>
                         </div>
                     </div>
 
