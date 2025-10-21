@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("IPC", {
     createPage: (jsonobj) => ipcRenderer.invoke("create-page", jsonobj),
     fetchAllPages: (filterDeleted) => ipcRenderer.invoke("fetch-all-pages", filterDeleted),
     setBaseUrl: (baseUrl) => ipcRenderer.invoke("base-url", baseUrl),
+    jsonToUrl: (jsonObj) => ipcRenderer.invoke('json-to-url', jsonObj),
     showChoice: ({ title, message, buttons, defaultId, cancelId }) => ipcRenderer.invoke('show-choice', { title, message, buttons, defaultId, cancelId }),
     focusApp: () => ipcRenderer.send('ford-focus-app'),
     getPreferedTheme: () => ipcRenderer.invoke("get-prefered-theme"),

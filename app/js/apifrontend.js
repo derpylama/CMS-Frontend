@@ -44,6 +44,10 @@ class WonkyCMSApiWrapperFrontend {
     async GetPreviewOfPages(previewLength = 100, previewLang = "sv") {
         return await window.IPC.getPreviewOfPages(previewLength, previewLang);
     }
+
+    async JsonToUrl(jsonObj) {
+        return await window.IPC.jsonToUrl(jsonObj);
+    }
 }
 
 

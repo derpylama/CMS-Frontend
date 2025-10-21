@@ -64,6 +64,10 @@ ipcMain.handle("set-base-url", async (event, baseUrl) => {
     return await api.setBaseUrl(baseUrl);
 });
 
+ipcMain.handle('json-to-url', (event, jsonObj) => {
+    return api.JsonToUrl(jsonObj);
+});
+
 ipcMain.handle('show-choice', async (event, { title, message, buttons, defaultId, cancelId }) => {
     const result = await dialog.showMessageBox(win, {
         type: 'question',
