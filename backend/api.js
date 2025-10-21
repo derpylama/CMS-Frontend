@@ -270,10 +270,22 @@ class WonkyCMSApiWrapper {
             const height = getCSSValue(styles, "height");
             const display = getCSSValue(styles, "display");
             const bgColor = getCSSValue(styles, "background-color");
+            const bgImage = getCSSValue(styles, "background-image");
             const flow = getCSSValue(styles, "flex-flow");
             const justify = getCSSValue(styles, "justify-content");
             const align = getCSSValue(styles, "align-items");
-            const paddingBot = getCSSValue(styles, "padding-bottom");
+            const border = getCSSValue(styles, "border");
+            const borderRadius = getCSSValue(styles, "border-radius");
+            const margin = getCSSValue(styles, "margin");
+            const marginTop = getCSSValue(styles, "margin-top");
+            const marginBottom = getCSSValue(styles, "margin-bottom");
+            const marginLeft = getCSSValue(styles, "margin-left");
+            const marginRight = getCSSValue(styles, "margin-right");
+            const padding = getCSSValue(styles, "padding");
+            const paddingTop = getCSSValue(styles, "padding-top");
+            const paddingBottom = getCSSValue(styles, "padding-bottom");
+            const paddingLeft = getCSSValue(styles, "padding-left");
+            const paddingRight = getCSSValue(styles, "padding-right");
 
             // For the first div (root), do NOT add addDivToDiv[]
             if (i > 0) {
@@ -281,14 +293,26 @@ class WonkyCMSApiWrapper {
                 parts.push(`addDivToDiv${brackets}=${parentDivName}`);
             }
 
-            if (width)      parts.push(`newDivWidth${brackets}=${encode(width)}`);
-            if (height)     parts.push(`newDivHeight${brackets}=${encode(height)}`);
-            if (display)    parts.push(`newDivDisplay${brackets}=${encode(display)}`);
-            if (bgColor)    parts.push(`newDivColor${brackets}=${encodeColor(bgColor)}`);
-            if (flow)       parts.push(`newDivFlow${brackets}=${encode(flow)}`);
-            if (justify)    parts.push(`newDivJustify${brackets}=${encode(justify)}`);
-            if (align)      parts.push(`newDivAlign${brackets}=${encode(align)}`);
-            if (paddingBot) parts.push(`newDivPaddingBot${brackets}=${encode(paddingBot)}`);
+            if (width)         parts.push(`newDivWidth${brackets}=${encode(width)}`);
+            if (height)        parts.push(`newDivHeight${brackets}=${encode(height)}`);
+            if (display)       parts.push(`newDivDisplay${brackets}=${encode(display)}`);
+            if (bgColor)       parts.push(`newDivColor${brackets}=${encodeColor(bgColor)}`);
+            if (flow)          parts.push(`newDivFlow${brackets}=${encode(flow)}`);
+            if (align)         parts.push(`newDivAlign${brackets}=${encode(align)}`);
+            if (justify)       parts.push(`newDivJustify${brackets}=${encode(justify)}`);
+            if (border)        parts.push(`newDivBorder${brackets}=${encode(border)}`);
+            if (borderRadius)  parts.push(`newDivBorderRadius${brackets}=${encode(borderRadius)}`);
+            if (margin)        parts.push(`newDivMargin${brackets}=${encode(margin)}`);
+            if (marginTop)     parts.push(`newDivMarginTop${brackets}=${encode(marginTop)}`);
+            if (marginBottom)  parts.push(`newDivMarginBot${brackets}=${encode(marginBottom)}`);
+            if (marginLeft)    parts.push(`newDivMarginLeft${brackets}=${encode(marginLeft)}`);
+            if (marginRight)   parts.push(`newDivMarginRight${brackets}=${encode(marginRight)}`);
+            if (padding)       parts.push(`newDivPadding${brackets}=${encode(padding)}`);
+            if (paddingTop)    parts.push(`newDivPaddingTop${brackets}=${encode(paddingTop)}`);
+            if (paddingBottom) parts.push(`newDivPaddingBot${brackets}=${encode(paddingBottom)}`);
+            if (paddingLeft)   parts.push(`newDivPaddingLeft${brackets}=${encode(paddingLeft)}`);
+            if (paddingRight)  parts.push(`newDivPaddingRight${brackets}=${encode(paddingRight)}`);
+            if (bgImage)       parts.push(`newDivGradient${brackets}=${encode(bgImage)}`);
         }
 
         // Text info

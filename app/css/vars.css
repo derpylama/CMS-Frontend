@@ -2,6 +2,7 @@
     --standard-font: Arial, Helvetica, sans-serif;
 
     --standard-border-width: 0.1rem;
+    --large-border-width: 0.4rem;
 
     --medium-border-radius: 1rem;
     --light-border-radius: 0.5rem;
@@ -14,10 +15,15 @@
     --topbar-ymargin: 0.6rem;
 
     --highlighted-border-width: 0.4rem;
+
+    --small-button-padding: 0.4rem;
+    --medium-button-padding: 1rem;
+
+    --page-padding: 2rem;
 }
 
 [data-theme="light"] {
-    --standard-background: #cfcfcf;
+    --standard-background: #ffffff;
     --secondary-background: #b4b4b4;
 
     --divider-color: #969696;
@@ -28,22 +34,57 @@
     --standard-font-color: #000000;
     --standard-border-color: rgba(0, 0, 0, 0.8);
 
+    --highlighted-color: #5eec78;
+
+    --focused-border-color: #272525;
+
+    --li-background-hover: rgba(0, 0, 0, 0.2);
+
+    --preview-card-background: #dde0df;
+
+    --lang-toggled-background: #b4b4b4;
+    --lang-toggled-color: black;
+    --lang-untoggled-background: #1b1b1b;
+    --lang-untoggled-color: white;
+    
+    --button-border-color: none;
+    --button-color: #eeeeee;
+    --button-hover: #e7e7e7;
+    
+}
+
+[data-theme="dark"] {
+    --standard-background: #181818;
+    --secondary-background: #252525;
+
+    --divider-color: #414141;
+
+    --medium-backdrop-color: rgba(255, 255, 255, 0.4);
+    --light-backdrop-color: rgba(0, 0, 0, 0.2);
+
+    --standard-font-color: #d6d7e2;
+    --standard-border-color: rgba(0, 0, 0, 0.8);
+
     --highlighted-color: #ff0000;
 
     --focused-border-color: #272525;
 
     --li-background-hover: rgba(0, 0, 0, 0.2);
 
-    --preview-card-background: #b4b4b4;
+    --preview-card-background: #242424;
 
     --lang-toggled-background: #b4b4b4;
     --lang-toggled-color: black;
     --lang-untoggled-background: #1b1b1b;
     --lang-untoggled-color: white;
+
+    --button-border-color: #4a4a4a;
+    --button-color: #2c2c2c;
+    --button-hover: #454545;
 }
 
-[data-theme="dark"] {
-    --standard-background: #181818;
+[data-theme="rainbow"] {
+    --standard-background: #ff14eb;
     --secondary-background: #252525;
 
     --divider-color: #2c2c2c;

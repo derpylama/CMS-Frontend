@@ -13,7 +13,7 @@ let win;
 function getPreferedThemeFromConfig() {
     if (config.has("theme")) {
         const theme = config.get("theme");
-        if (theme === "light" || theme === "dark") {
+        if (theme === "light" || theme === "dark" || theme === "rainbow") {
             return theme;
         }
 
@@ -62,6 +62,10 @@ ipcMain.handle("fetch-all-pages", async (event, filterDeleted) => {
 
 ipcMain.handle("set-base-url", async (event, baseUrl) => {
     return await api.setBaseUrl(baseUrl);
+});
+
+ipcMain.handle('json-to-url', (event, jsonObj) => {
+    return api.JsonToUrl(jsonObj);
 });
 
 ipcMain.handle('show-choice', async (event, { title, message, buttons, defaultId, cancelId }) => {

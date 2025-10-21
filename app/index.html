@@ -47,6 +47,7 @@
                     <input type="checkbox" id="nav-toggle-viewer-editor">
                     <span id="nav-toggle-viewer-editor-text">Viewer/Editor</span>
                 </label>
+                <button id="editor-delete-page" class="on-editor-edit topbar-button">Delete Page</button>
             </nav>
             <nav id="header-right" class="hflex">
                 <label class="on-pages on-viewer on-editor-edit checkbox-button" for="nav-toggle-lang">
@@ -70,17 +71,25 @@
             </section>
 
             <section id="page-editor" class="on-editor vflex">
-                <div class="vflex">
-                    <div class="hflex">
-                        <label>Header:</label>
-                        <input type="text" id="editor-input-header">
+                <div id="editor-button-section" class="editor-button-container page-section-border">
+                    <div class="hflex page-section-padding item-gap">
+
+                        <div class="hflex editor-button center-vertical">
+                            <label>Header:</label>
+                            <input type="text" id="editor-input-header" placeholder="...">
+                        </div>
+                        <select id="editor-select-lang" class="on-editor-create editor-button">
+                            <option value="en">English</option>
+                            <option value="sv">Svenska</option>
+                        </select>
                     </div>
-                    <select id="editor-select-lang" class="on-editor-create">
-                        <option value="en">English</option>
-                        <option value="sv">Svenska</option>
-                    </select>
+                    <div class="hflex page-section-padding item-gap">
+                        <button id="editor-cancel" class="editor-button">Cancel</button>
+                        <button id="editor-save" class="editor-button">Save</button>
+                    </div>
                 </div>
-                <div class="hflex page-create-edit-container">
+
+                <div id="editor-view-container" class="hflex page-create-edit-container page-section-padding">
                     <div class="vflex equal-width-flexbox">
                         <h3>HTML</h3>
                         <div class="text-container">
@@ -95,10 +104,6 @@
                             <iframe id="editor-preview"></iframe>
                         </div>
                     </div>
-                </div>
-                <div class="hflex">
-                    <button id="editor-cancel">Cancel</button>
-                    <button id="editor-save">Save</button>
                 </div>
             </section>
         
