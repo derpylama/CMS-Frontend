@@ -42,12 +42,18 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     async function loadViewer(key, lang) {
         document.documentElement.dataset.openpage = key;
 
-        const header = document.getElementById("header");
         const contentCon = document.getElementById("content-container");
 
         const data = await frapi.GetPage(key);
                 
-        header.innerText = data.header;
+        //header.innerText = data.header;
+        // Get the content of the first title element under head
+        const titleElement = document.getElementsByTagName("title")[0];
+        let usedHeader = data.header;
+        if (!data.header || data.header.trim() === "") {
+            usedHeader = key.charAt(0).toUpperCase() + key.slice(1);
+        }
+        window.IPC.setWindowTitle(titleElement.innerText + " - " + usedHeader);
 
         var html = frapi.JsonToHtml(data, lang);
         contentCon.innerHTML = html;
@@ -161,6 +167,9 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     });
 
     navGoBackBtn.addEventListener("click", async (e) => {
+        const titleElement = document.getElementsByTagName("title")[0];
+        window.IPC.setWindowTitle(titleElement.innerText);
+
         navToggleViewerEditor.checked = false;
         if (document.documentElement.getAttribute("data-page") !== "pages") {
             await loadPreviews(document.documentElement.dataset.lang); // Load previews

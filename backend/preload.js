@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld("IPC", {
     showChoice: ({ title, message, buttons, defaultId, cancelId }) => ipcRenderer.invoke('show-choice', { title, message, buttons, defaultId, cancelId }),
     focusApp: () => ipcRenderer.send('ford-focus-app'),
     getPreferedTheme: () => ipcRenderer.invoke("get-prefered-theme"),
+    setWindowTitle: (title) => ipcRenderer.send('set-window-title', title),
 });

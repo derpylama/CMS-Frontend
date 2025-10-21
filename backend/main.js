@@ -85,6 +85,12 @@ ipcMain.on('ford-focus-app', () => {
     }
 });
 
+ipcMain.on('set-window-title', (event, title) => {
+    if (win) {
+        win.setTitle(title);
+    }
+});
+
 app.whenReady().then(() => {
     createWindow();
 })
