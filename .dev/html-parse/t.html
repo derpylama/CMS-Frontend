@@ -1,0 +1,23 @@
+<script src="https://cdn.jsdelivr.net/gh/Munawwar/neutron-html5parser/htmlparser.js"></script>
+<script>
+    const html = `
+    <div style="background-color: lightblue; padding: 10px;">
+        <div>Header start <p> with emphasis</p> and end</div>
+        <div style="border: 1px solid black;"><img src="image.jpg">
+            <div>
+                <p>Caption</p>
+            </div>
+        </div>
+        <p>[Video: video.mp4]</p>
+        <div>This is a <p>bold</p> and <p>italic</p> text with <p style="color: red;">red span</p>.</div>
+    </div>
+    <div>
+        <h3>Side Header</h3>
+        <p>Regular text</p><img src="sideimage.png"><img src="sideimage2.png">
+    </div>
+    <p>alert('malicious code');</p>
+    `;
+
+    const doc = HTMLtoDOM(html);
+    console.log(doc);
+</script>

@@ -95,7 +95,11 @@ ESES Extension
     If its under emulated we use the provided function to get its text representation.
     All other elements are mapped to NotRepresented.
 
-    Example WonkyHTML with ESES data:
+    !NOTE! LesserHTML does not allow empty elements, all elements without content will be in the NotRepresented category and only exist in the ESES mapping data.
+
+    !NOTE! LesserHTML does not support divs without any styling so for any divs that have no styling we add `style="display:block;"` to ensure they are valid LesserHTML.
+
+    Example LesserHTML with ESES data:
     <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
         <p style="display: none;">ESES1:...base64-encode-of-json...</p>
         <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
@@ -145,7 +149,7 @@ class ESESApiExtender {
     esesJsonToMetaString(jsonobj) {
         // Takes jsonobj => jsonstr => base64str => "ESES{v}:" + base64str
         const jsonstr = JSON.stringify(jsonobj);
-        const base64str = Buffer.from(jsonstr).toString('base64');
+        const base64str = btoa(jsonstr);
         return "ESES" + this.esesVersion + ":" + base64str;
     }
 
@@ -158,17 +162,19 @@ class ESESApiExtender {
 
         const base64str = metastr.slice(esesPrefix.length);
 
-        const jsonstr = Buffer.from(base64str, 'base64').toString('utf-8');
+        const jsonstr = atob(base64str);
 
         return JSON.parse(jsonstr);
     }
 
-    FromFullHtml(html) {
-        // We are in the frontend and can use the DOM and `document` variable
+    // Turns the full regular html5 into the restricted CMS-API html
+    FullHtmlToLesserHtml(lesserhtml) {
+        // We don't ever want to use the DOM or `document` variable instead use `const doc = HTMLtoDOM(lesserhtml);` which does not have all methods of `document`
     }
 
-    ToFullHtml(lesserhtml) {
-        // We are in the frontend and can use the DOM and `document` variable
+    // Turns the restricted CMS-API html into the full regular html5
+    LesserHtmlToFullHtml(html) {
+        // We don't ever want to use the DOM or `document` variable instead use `const doc = HTMLtoDOM(html);` which does not have all methods of `document`
     }
 }
 
