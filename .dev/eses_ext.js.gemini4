@@ -1,0 +1,922 @@
+/*
+ESES Extension
+
+  ESES Defines a way to encode arbitrary HTML into the restricted CMS-API format while maintaining readability for non ESES aware clients to the extent possible.
+
+  The extension builds on having a `<p style="display: none;">` tag containing ESES mapping data, this one maps element-hiarchy-keys to the elements extended data.
+  This is since the CMS API format only allows:
+    HTML Elements:
+      - p
+      - h3
+      - div
+      - img (with only property "src")
+
+    p/h3 CSS Style Properties:
+      - font-size
+      - color
+      - display
+      - font-family
+      - font-weight
+      - font-style
+      - text-decoration
+      - text-transform
+
+    div CSS Style Properties:
+      - width
+      - height
+      - display
+      - background-color
+      - flex-flow
+      - align-items
+      - justify-content
+      - border
+      - border-radius
+      - margin
+      - margin-top
+      - margin-bottom
+      - margin-left
+      - margin-right
+      - padding
+      - padding-top
+      - padding-bottom
+      - padding-left
+      - padding-right
+      - background-image
+
+    And div is the only element who can have child elements, p and h3 must only have text content.
+
+  The goal of ESES is to map additional HTML element types, their properties (except img src), content for non text elements aswell as any CSS properties not supported by the CMS format.
+    This means if an element is of a type not supported we can represent it as a div, p or h3 then map that element's hiarchy key to the original element type and its properties.
+    Elements properties and css-properties that are supported by the CMS format should be kept inside the html however any non supported properties should be stored in the ESES mapping data.
+
+    The ESES mapping data must be html+ini safe text and is thus stored as base64 incoded JSON. With the prefix "ESES1:" (for v1 of the ESES extension)
+      since the mapping element has `display: none` we hint to other clients that this is not meant to be displayed.
+
+      The JSON structure is:
+        {
+            "<hiarchy-key>": {
+                "element": "<original-element-type>",
+                "attributes": {
+                    "<attribute-name>": "<attribute-value>",
+                    ...
+                },
+                "styles": {
+                    "<css-property-name>": "<css-property-value>",
+                    ...
+                },
+                "content": "<non-text-content>",
+                "isWrapper": <true|false>
+            },
+            ...
+        }
+
+      But fields `element`, `attributes`, `styles` and `content` are omitted if they are not relevant to that element. `isWrapper` is only present and true if the element was only added because its parent had to be converted to a div to hold children and this wraps the content, this element can thus be replaced with its own text-content.
+
+    HTML elements can be categorized into one of the following five categories:
+      1. Headers - h1, h2, h4, h5, h6 - Mapped to `h3`
+      2. Text - Al elements that are primarily text-based, ex semantics like `em` or formatters like `b` and `i`. - Mapped to `p`
+      3. Containers - Elements semantic or layouting that contain other elements, ex `main` or `span` - Mapped to `div`
+      4. Represented - Elements who are not supported but can have thier core properties represented as text for non ESES clients, ex `video` who can be represented as `[Video: <source>]` - Mapped to `p`
+      5. NotRepresented - Elements that have no relevant representation outside of ESES, ex `script`, self closing elements or non-content elements are also in this category like `br`, stored fully in ESES.
+
+    Since we want to maintain readability for non ESES clients we try to map elements to the first three categories when possible, otherwise we try to the "represented" category before falling back to "not represented".
+      Example `<b>bold text</b>` becomes `<p>bold text</p>` with mapping data saying that this hiarchy key is a `b` element.
+      And `<figure><img src="image.jpg"><figcaption>Caption</figcaption></figure>` becomes `<div><img src="image.jpg"><p>Caption</p></div>` with mapping data saying that the hiarchy key of the div is a `figure` element and the hiarchy key of the p is a `figcaption` element.
+      But some elements make more sense to be represented with their content, ex `<video><source src="video.mp4"></video>` becomes `<p>[Video: video.mp4]</p>` combining the <source> element into the representation.
+
+    But since the API only supports child elements under `div` elements any children under non-container elements will have thier parent converted into a div.
+      Example `<h2>Header <em>with emphasis</em></h2>` becomes `<div><h3>Header </h3><p>with emphasis</p></div>` with mapping data saying that the hiarchy key of the div is an `h2` element and the hiarchy key of the p is an `em` element and the hiarchy key of the h3 has "isWrapper" true meaning the h3 can be reduced to their text-content when back-converting.
+      Example `<h2>Header start <em> with emphasis</em> and end</h2>` becomes `<div><h3>Header start </h3><p> with emphasis</p><h3> and end</h3></div>` with mapping data saying that the hiarchy key of the div is an `h2` element, the hiarchy key of the p is an `em` element and both h3 hiarchy keys have "isWrapper" true meaning they can be reduced to their text-content when back-converting.
+
+    When back-converting we use the mapping data to restore the original elements, completely, recursing over and handling "isWrapper" elements by replacing them with their text-content, and restoring attributes, styles and content as needed, aswell as the element type ofcourse.
+
+    When converting we can use recursion and the bellow elementsMap, if an element type is under "header" and has no child elements we map it to `h3`, if its under "text" and has no child elements we map it to `p`, if its under "container" we map it to `div`,
+      if it has content and is udner "header" or "text" we handle with the "isWrapper" logic.
+    If its under emulated we use the provided function to get its text representation.
+    All other elements are mapped to NotRepresented.
+
+    !NOTE! LesserHTML does not allow empty elements, all elements without content will be in the NotRepresented category and only exist in the ESES mapping data.
+
+    !NOTE! LesserHTML does not support divs without any styling so for any divs that have no styling we add `style="display:block;"` to ensure they are valid LesserHTML.
+
+    Example LesserHTML with ESES data:
+    <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
+        <p style="display: none;">ESES1:...base64-encode-of-json...</p>
+        <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
+        <p style="font-size:18px;color:#003300;">Koalor är små tåliga trädlevande djur från Australien.</p>
+        <img style="width:100%;height:250px;height:250;border-radius:10;border-radius:10;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image">
+        <div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:row;">
+            <h3 style="font-size:28px;color:#006633;">Fakta om Koalor</h3>
+            <p style="font-size:16px;color:#666600;">De är kända för att äta eukalyptusblad.</p>
+            <p style="font-size:18px;color:#ff6600;">Koalor äter nästan uteslutande eukalyptusblad.</p>
+            <img style="width:80%;height:200px;height:200;border-radius:15;border-radius:15;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Koala_eating_eucalyptus_leaf.jpg" alt="Image">
+        </div>
+        <div style="width:80%;height:250px;display:flex;background-color:#ffe4b5;flex-flow:column;">
+            <h3 style="font-size:24px;color:green;">Roliga fakta</h3>
+            <p style="font-size:16px;color:#005500;">Koalor sover upp till 20 timmar per dag.</p>
+            <p style="font-size:14px;">Koalor har starka klor för att klättra i träd.</p>
+            <p style="">Koalor kommunicerar med olika ljud, från snarkningar till skrik.</p>
+            <p style="">test</p>
+            <img style="width:90%;height:180px;height:180;border-radius:20;border-radius:20;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/0/08/Koala_sleeping_in_tree.jpg" alt="Image">
+            <img style="width:70%;height:140px;height:140;border-radius:25;border-radius:25;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/1/14/Koala_close_up.jpg" alt="Image">
+        </div>
+    </div>
+*/
+
+// Helper function to convert HTML string to a DOM-like structure
+// In a browser environment, this would typically use DOMParser.
+// For demonstration, we'll create a minimal representation.
+function HTMLtoDOM(htmlString) {
+    // Use DOMParser if available (browser environment)
+    if (typeof DOMParser !== "undefined") {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlString, "text/html");
+      // Return the body's children as a root array to simulate a document fragment
+      // or if the input is a full document, doc.body or doc.documentElement.
+      // For our use case, we often start with fragments.
+      return doc.body || doc.documentElement;
+    } else {
+      // Fallback for non-browser environments or very minimal simulation
+      // This is a highly simplified representation and won't support full DOM API.
+      console.warn(
+        "DOMParser not available. Using a simplified HTML-to-DOM simulation. " +
+          "Functionality will be limited."
+      );
+      // A more robust polyfill would be needed for complex cases without DOMParser.
+      // For now, this is a placeholder to prevent errors.
+      return {
+        childNodes: [],
+        innerHTML: htmlString,
+        outerHTML: htmlString,
+        tagName: "BODY", // Default to body for a root container
+        nodeType: 1, // ELEMENT_NODE
+        style: {}, // Placeholder
+        attributes: {}, // Placeholder
+        hasAttribute: () => false,
+        getAttribute: () => null,
+        setAttribute: () => {},
+        removeAttribute: () => {},
+        textContent: htmlString, // Very simplistic for a root
+        appendChild: () => {},
+        removeChild: () => {},
+        replaceChild: () => {},
+        insertBefore: () => {},
+        cloneNode: () => ({ ...this }),
+      };
+    }
+  }
+  
+  class ESESApiExtender {
+    constructor(api) {
+      this.api = api;
+      this.esesVersion = "1";
+  
+      this.elementsMap = {
+        header: ["h1", "h2", "h4", "h5", "h6"],
+        text: ["p", "span", "em", "strong", "b", "i", "u", "small", "mark", "sub", "sup"],
+        container: ["div", "main", "section", "article", "header", "footer", "aside", "nav"],
+        emulated: [
+          [
+            "video",
+            (el) => {
+              const sources = el.getElementsByTagName("source");
+              if (sources.length > 0 && sources[0].hasAttribute("src")) {
+                return `[Video: ${sources[0].getAttribute("src")}]`;
+              }
+              return "[Video]";
+            },
+          ],
+          [
+            "audio",
+            (el) => {
+              const sources = el.getElementsByTagName("source");
+              if (sources.length > 0 && sources[0].hasAttribute("src")) {
+                return `[Audio: ${sources[0].getAttribute("src")}]`;
+              }
+              return "[Audio]";
+            },
+          ],
+          [
+            "iframe",
+            (el) => {
+              if (el.hasAttribute("src")) {
+                return `[iframe: ${el.getAttribute("src")}]`;
+              }
+              return "[iframe]";
+            },
+          ],
+        ],
+        // Elements that are not represented in LesserHTML at all, only in ESES data
+        notRepresented: ["script", "style", "br", "hr", "link", "meta", "input", "textarea"],
+      };
+  
+      // Allowed CSS properties for P and H3 elements in LesserHTML
+      this.allowedPH3Styles = [
+        "font-size",
+        "color",
+        "display",
+        "font-family",
+        "font-weight",
+        "font-style",
+        "text-decoration",
+        "text-transform",
+      ];
+  
+      // Allowed CSS properties for DIV elements in LesserHTML
+      this.allowedDivStyles = [
+        "width",
+        "height",
+        "display",
+        "background-color",
+        "flex-flow",
+        "align-items",
+        "justify-content",
+        "border",
+        "border-radius",
+        "margin",
+        "margin-top",
+        "margin-bottom",
+        "margin-left",
+        "margin-right",
+        "padding",
+        "padding-top",
+        "padding-bottom",
+        "padding-left",
+        "padding-right",
+        "background-image",
+      ];
+    }
+  
+    esesJsonToMetaString(jsonobj) {
+      const jsonstr = JSON.stringify(jsonobj);
+      //const base64str = btoa(jsonstr);
+      const base64str = jsonstr;
+      return "ESES" + this.esesVersion + ":" + base64str;
+    }
+  
+    metaStringToEsesJson(metastr) {
+      const esesPrefix = "ESES" + this.esesVersion + ":";
+      if (!metastr.startsWith(esesPrefix)) {
+        throw new Error("Invalid ESES meta string");
+      }
+      const base64str = metastr.slice(esesPrefix.length);
+      //const jsonstr = atob(base64str);
+      const jsonstr = base64str;
+      return JSON.parse(jsonstr);
+    }
+  
+    // Helper to extract relevant styles based on element type and allowed properties
+    _extractAllowedStyles(element, type) {
+      const styleAttr = element.getAttribute("style");
+      if (!styleAttr) return { allowed: {}, other: {} };
+  
+      const styles = {};
+      styleAttr.split(";").forEach((s) => {
+        const parts = s.split(":").map((p) => p.trim());
+        if (parts.length === 2) {
+          styles[parts[0]] = parts[1];
+        }
+      });
+  
+      const allowed = {};
+      const other = {};
+      const allowedList =
+        type === "div"
+          ? this.allowedDivStyles
+          : ["p", "h3"].includes(type)
+            ? this.allowedPH3Styles
+            : [];
+  
+      for (const prop in styles) {
+        if (allowedList.includes(prop)) {
+          allowed[prop] = styles[prop];
+        } else {
+          other[prop] = styles[prop];
+        }
+      }
+      return { allowed, other };
+    }
+  
+    // Helper to serialize style object back to string
+    _styleObjectToString(styleObj) {
+      return Object.entries(styleObj)
+        .map(([prop, value]) => `${prop}:${value}`)
+        .join(";");
+    }
+  
+    // Turns the full regular html5 into the restricted CMS-API html
+    FullHtmlToLesserHtml(fullHtml) {
+      const doc = HTMLtoDOM(fullHtml);
+      const esesMapping = {};
+      let hiarchyCounter = 0;
+  
+      // A stack to keep track of hiarchy keys
+      const hiarchyStack = [];
+  
+      // Helper to generate unique hiarchy keys
+      const generateHiarchyKey = (parentKey, index) => {
+        if (parentKey === "") {
+          return `${index}`;
+        }
+        return `${parentKey}.${index}`;
+      };
+  
+      const processNode = (node, parentLesserNode, currentHiarchyKey) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          if (node.textContent.trim() === "") {
+            return; // Ignore empty text nodes
+          }
+          // If parentLesserNode is not a div, wrap text in a <p>
+          if (parentLesserNode && parentLesserNode.tagName.toLowerCase() !== "div") {
+            const p = document.createElement("p");
+            p.textContent = node.textContent;
+            parentLesserNode.appendChild(p);
+            return;
+          } else {
+            // If parent is a div, just add the text content directly, or wrap in a p if needed
+            const p = document.createElement("p");
+            p.textContent = node.textContent;
+            parentLesserNode.appendChild(p);
+          }
+          return;
+        }
+  
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return;
+        }
+  
+        const originalTagName = node.tagName.toLowerCase();
+        let lesserElement = null;
+        let esesData = { element: originalTagName };
+        let childrenConverted = []; // To hold children generated for the lesser element
+        let needsWrapperDiv = false;
+  
+        // Extract attributes
+        const attributes = {};
+        const allowedImgSrc = originalTagName === "img" ? node.getAttribute("src") : null;
+        for (const attr of node.attributes) {
+          if (originalTagName === "img" && attr.name === "src") {
+            // 'src' for img is handled directly
+          } else {
+            attributes[attr.name] = attr.value;
+          }
+        }
+        if (Object.keys(attributes).length > 0) {
+          esesData.attributes = attributes;
+        }
+  
+        // Extract styles
+        const originalStyleText = node.getAttribute("style") || "";
+        const extractedStyles = this._extractAllowedStyles(node, originalTagName);
+        if (Object.keys(extractedStyles.other).length > 0) {
+          esesData.styles = extractedStyles.other;
+        }
+  
+        // Check for children and content
+        const hasChildElements = Array.from(node.children).some(
+          (child) => child.nodeType === Node.ELEMENT_NODE
+        );
+        const hasTextContent = node.textContent.trim().length > 0;
+        const isSelfClosing = !node.children.length && !node.textContent.trim(); // Heuristic for self-closing/empty
+  
+        // Category 5: Not Represented (empty elements, scripts, etc.)
+        if (
+          (isSelfClosing && !this.elementsMap.emulated.some(([tag]) => tag === originalTagName)) ||
+          this.elementsMap.notRepresented.includes(originalTagName)
+        ) {
+          // Only store in ESES mapping, don't create a LesserHTML element
+          if (Object.keys(esesData).length > 1) {
+            esesMapping[currentHiarchyKey] = esesData;
+          }
+          return; // Don't add to LesserHTML
+        }
+  
+        // Process children first to determine if a wrapper div is needed
+        const tempChildren = [];
+        let childIdx = 0;
+        for (const child of node.childNodes) {
+          const childHiarchyKey = generateHiarchyKey(currentHiarchyKey, childIdx);
+          // Special handling for text nodes within non-container elements
+          if (child.nodeType === Node.TEXT_NODE) {
+            if (child.textContent.trim() !== "") {
+              // For now, just store text content in a temporary array.
+              // We'll process it into <p> or <h3> later, possibly with isWrapper.
+              tempChildren.push({ type: "text", content: child.textContent, hiarchyKey: childHiarchyKey });
+            }
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            const convertedChild = processNode(child, null, childHiarchyKey); // Pass null for parent initially
+            if (convertedChild) {
+              tempChildren.push({ type: "element", node: convertedChild, hiarchyKey: childHiarchyKey });
+              if (convertedChild.tagName.toLowerCase() !== "p" && convertedChild.tagName.toLowerCase() !== "h3" && convertedChild.tagName.toLowerCase() !== "img") {
+                needsWrapperDiv = true; // If a child is a div, or other complex type, parent needs to be a div
+              }
+            }
+          }
+          childIdx++;
+        }
+  
+        // Determine the LesserHTML element type and what to store in ESES
+        let mappedTagName = "";
+  
+        // Category 1: Headers
+        if (this.elementsMap.header.includes(originalTagName)) {
+          mappedTagName = "h3";
+        }
+        // Category 2: Text
+        else if (this.elementsMap.text.includes(originalTagName)) {
+          mappedTagName = "p";
+        }
+        // Category 3: Containers
+        else if (this.elementsMap.container.includes(originalTagName)) {
+          mappedTagName = "div";
+        }
+        // Special: img is allowed as is
+        else if (originalTagName === "img") {
+          mappedTagName = "img";
+        }
+        // Category 4: Emulated
+        else {
+          const emulatedEntry = this.elementsMap.emulated.find(
+            ([tag]) => tag === originalTagName
+          );
+          if (emulatedEntry) {
+            mappedTagName = "p";
+            const representationText = emulatedEntry[1](node);
+            esesData.content = representationText; // Store representation for non-ESES clients
+          } else {
+            // Fallback to "NotRepresented" logic for elements not explicitly handled
+            // Store entire innerHTML as content if it's meant to be block-level
+            mappedTagName = "div"; // Default to div for block-level if not representable otherwise
+            if (node.children.length === 0 && node.textContent.trim().length > 0) {
+               // For elements like `code`, `pre`, `blockquote` that just have text content
+               esesData.content = node.textContent.trim();
+            } else {
+               // For complex structures, store outerHTML or innerHTML for full restoration
+               // However, the doc asks for "content" for "non-text-content", implying it's a value.
+               // If the content is structural HTML, it will be lost for non-ESES clients.
+               // To preserve, we'd need to decide to store `innerHTML` here.
+               // Given the doc, `content` is for a *value* if it's not text.
+               // If we must render something, maybe the tag name?
+               if (node.children.length > 0 || node.textContent.trim().length > 0) {
+                 // This implies a non-represented element that had complex content
+                 // will lose its complex structure to non-ESES, unless it can be text.
+                 // For full restoration, the original `innerHTML` might be stored here.
+                 // Let's store `innerHTML` to ensure full content restoration.
+                 esesData.content = node.innerHTML;
+               }
+            }
+          }
+        }
+  
+        // An img element is directly supported, but its non-src attributes and
+        // styles go into ESES data if present.
+        if (mappedTagName === "img") {
+          lesserElement = document.createElement("img");
+          if (allowedImgSrc) {
+            lesserElement.setAttribute("src", allowedImgSrc);
+          }
+          const lesserStyles = this._styleObjectToString(extractedStyles.allowed);
+          if (lesserStyles) {
+            lesserElement.setAttribute("style", lesserStyles);
+          }
+          // No children for img
+          // If there's content from emulated function, that would be in p.
+        } else {
+          // Create the LesserHTML element
+          lesserElement = document.createElement(mappedTagName);
+  
+          // Apply allowed styles
+          const lesserStyles = this._styleObjectToString(extractedStyles.allowed);
+          if (lesserStyles) {
+            lesserElement.setAttribute("style", lesserStyles);
+          }
+  
+          // Handle `div` elements with no styles
+          if (
+            mappedTagName === "div" &&
+            Object.keys(extractedStyles.allowed).length === 0 &&
+            !originalStyleText
+          ) {
+            lesserElement.setAttribute("style", "display:block;");
+          }
+  
+          // Handle children logic for non-img elements
+          if (tempChildren.length > 0) {
+            // If the mapped element is not a 'div' but has complex children (i.e., not just text nodes
+            // or `img` elements) or multiple children, it needs to be wrapped in a div.
+            // Or if its original type was header/text and it has children elements, it becomes a div.
+            if (
+              mappedTagName !== "div" &&
+              (hasChildElements || (this.elementsMap.header.includes(originalTagName) || this.elementsMap.text.includes(originalTagName)))
+            ) {
+              needsWrapperDiv = true;
+            }
+  
+            if (needsWrapperDiv && mappedTagName !== "div") {
+              // Create a wrapper div to contain children
+              const wrapperDiv = document.createElement("div");
+              // Move any allowed styles from the original element to this wrapper div
+              const originalAllowedStyles = this._styleObjectToString(
+                this._extractAllowedStyles(node, "div").allowed
+              );
+              if (originalAllowedStyles) {
+                wrapperDiv.setAttribute("style", originalAllowedStyles);
+              } else {
+                wrapperDiv.setAttribute("style", "display:block;"); // Ensure div has style
+              }
+              // Add original element type and other info to ESES mapping for this wrapper div
+              if (Object.keys(esesData).length > 1) {
+                esesMapping[currentHiarchyKey] = esesData;
+              }
+              // Now, this wrapper div becomes the effective 'lesserElement' for children
+              lesserElement = wrapperDiv;
+              // The original lesserElement's textual content (if any) needs to be wrapped
+              // and marked as isWrapper: true
+              let currentTextBuffer = "";
+              let textNodeChildIdx = 0;
+  
+              for (const child of tempChildren) {
+                if (child.type === "text") {
+                  currentTextBuffer += child.content;
+                } else if (child.type === "element") {
+                  if (currentTextBuffer.trim().length > 0) {
+                    const pOrH3 = document.createElement(
+                      this.elementsMap.header.includes(originalTagName) ? "h3" : "p"
+                    );
+                    pOrH3.textContent = currentTextBuffer;
+                    // Store this wrapper text element in ESES data
+                    const textWrapperHiarchyKey = generateHiarchyKey(
+                      currentHiarchyKey,
+                      textNodeChildIdx++
+                    );
+                    esesMapping[textWrapperHiarchyKey] = { isWrapper: true };
+                    lesserElement.appendChild(pOrH3);
+                    currentTextBuffer = "";
+                  }
+                  lesserElement.appendChild(child.node);
+                  childrenConverted.push(child.node);
+                }
+              }
+              if (currentTextBuffer.trim().length > 0) {
+                const pOrH3 = document.createElement(
+                  this.elementsMap.header.includes(originalTagName) ? "h3" : "p"
+                );
+                pOrH3.textContent = currentTextBuffer;
+                const textWrapperHiarchyKey = generateHiarchyKey(
+                  currentHiarchyKey,
+                  textNodeChildIdx++
+                );
+                esesMapping[textWrapperHiarchyKey] = { isWrapper: true };
+                lesserElement.appendChild(pOrH3);
+              }
+            } else {
+              // The mapped element can directly contain its children (it's a div, or a text/header element without child *elements*)
+              if (mappedTagName === "div") {
+                // Append all processed children directly to the div
+                for (const child of tempChildren) {
+                  if (child.type === "text") {
+                    // Text nodes within a div usually go into a p tag in LesserHTML
+                    if (child.content.trim().length > 0) {
+                      const p = document.createElement("p");
+                      p.textContent = child.content;
+                      lesserElement.appendChild(p);
+                    }
+                  } else {
+                    lesserElement.appendChild(child.node);
+                  }
+                  childrenConverted.push(child.node);
+                }
+              } else if (
+                (mappedTagName === "p" || mappedTagName === "h3") &&
+                tempChildren.every((c) => c.type === "text")
+              ) {
+                // For p or h3 with only text children, concatenate text
+                lesserElement.textContent = tempChildren
+                  .map((c) => c.content)
+                  .join("");
+              } else if (
+                (mappedTagName === "p" || mappedTagName === "h3") &&
+                tempChildren.some((c) => c.type === "element")
+              ) {
+                // This case implies that an original p/h3 had child elements,
+                // which should have been caught by `needsWrapperDiv` and promoted to `div`.
+                // If we reached here, something went wrong, or it's an edge case.
+                // For robustness, if it has children elements, it effectively needs a wrapper.
+                // This section might indicate a logical flaw or missed case in `needsWrapperDiv`
+                // Let's re-evaluate the `needsWrapperDiv` logic.
+  
+                // If a P/H3 *has child elements*, it must become a DIV in LesserHTML.
+                // The original tag and non-supported properties go into ESES mapping for the DIV.
+                // The inner text content of the P/H3 (and its children) will then be wrapped
+                // in P/H3 tags within the new DIV, and these P/H3s will be marked with `isWrapper: true`.
+                // This is handled by the `needsWrapperDiv` block above.
+  
+                // So, if we are here and `mappedTagName` is 'p' or 'h3', it should *not* have child elements.
+                // It should only have `textContent`.
+                // If `tempChildren` contains `type: 'element'`, then `needsWrapperDiv` should have been true.
+                // The only text that directly goes into `lesserElement.textContent` is the one from `esesData.content`
+                // for emulated elements, or direct text nodes in the original (without element children).
+                // Let's assume for `p` and `h3` that at this point, `tempChildren` is already accounted for
+                // (either through direct textContent or wrapped in a div).
+                if (originalTagName !== mappedTagName && esesData.content) {
+                  lesserElement.textContent = esesData.content;
+                } else if (node.textContent.trim().length > 0 && mappedTagName !== "div") {
+                  lesserElement.textContent = node.textContent;
+                }
+              } else if (esesData.content) {
+                // If emulated and has content (e.g., [Video: src]), set it
+                lesserElement.textContent = esesData.content;
+              } else if (node.textContent.trim().length > 0 && !hasChildElements) {
+                // Direct text content for simple cases
+                lesserElement.textContent = node.textContent;
+              }
+            }
+          } else if (esesData.content) {
+            // No children, but content from emulated function
+            lesserElement.textContent = esesData.content;
+          } else if (node.textContent.trim().length > 0) {
+            // Simple text content for text/header elements without child elements
+            lesserElement.textContent = node.textContent;
+          }
+        }
+  
+        // Only store ESES data if there's more than just the original element type
+        if (Object.keys(esesData).length > 1) {
+          esesMapping[currentHiarchyKey] = esesData;
+        }
+  
+        // Append the lesser element to the parent in the LesserHTML tree
+        if (parentLesserNode) {
+          parentLesserNode.appendChild(lesserElement);
+        }
+  
+        return lesserElement;
+      };
+  
+      const lesserDoc = document.createElement("div"); // Use a div as a root container for LesserHTML
+      lesserDoc.setAttribute("style", "display:block;"); // Ensure it's valid
+      hiarchyStack.push(""); // Root's parent key
+  
+      // Process the children of the input 'doc' (which is body or document element)
+      Array.from(doc.children).forEach((child, index) => {
+        processNode(child, lesserDoc, generateHiarchyKey("", index));
+      });
+  
+      // Add the ESES mapping data as a hidden <p> tag
+      if (Object.keys(esesMapping).length > 0) {
+        const esesMetaP = document.createElement("p");
+        esesMetaP.setAttribute("style", "display: none;");
+        esesMetaP.textContent = this.esesJsonToMetaString(esesMapping);
+        lesserDoc.prepend(esesMetaP); // Prepend so it's usually at the top
+      }
+  
+      return lesserDoc.outerHTML;
+    }
+  
+    // Turns the restricted CMS-API html into the full regular html5
+    LesserHtmlToFullHtml(lesserHtml) {
+      const doc = HTMLtoDOM(lesserHtml);
+      let esesMapping = {};
+  
+      // Find and parse the ESES mapping data
+      const esesMetaP = doc.querySelector('p[style*="display: none;"]');
+      if (esesMetaP && esesMetaP.textContent.startsWith("ESES" + this.esesVersion + ":")) {
+        try {
+          esesMapping = this.metaStringToEsesJson(esesMetaP.textContent);
+          esesMetaP.remove(); // Remove the meta p tag from the LesserHTML DOM
+        } catch (e) {
+          console.error("Error parsing ESES meta string:", e);
+          esesMapping = {};
+        }
+      }
+  
+      // Helper to apply attributes and styles
+      const applyMetaToElement = (element, meta) => {
+        if (meta.element) {
+          // Change the element's tag name
+          const newElement = document.createElement(meta.element);
+          // Copy children
+          while (element.firstChild) {
+            newElement.appendChild(element.firstChild);
+          }
+          // Copy attributes (excluding style which is handled separately)
+          for (const attr of element.attributes) {
+            if (attr.name !== "style") {
+              newElement.setAttribute(attr.name, attr.value);
+            }
+          }
+          // Replace element with newElement in its parent
+          if (element.parentNode) {
+            element.parentNode.replaceChild(newElement, element);
+          }
+          element = newElement;
+        }
+  
+        if (meta.attributes) {
+          for (const attr in meta.attributes) {
+            element.setAttribute(attr, meta.attributes[attr]);
+          }
+        }
+  
+        if (meta.styles) {
+          let currentStyle = element.getAttribute("style") || "";
+          const existingStyles = {};
+          currentStyle.split(";").forEach((s) => {
+            const parts = s.split(":").map((p) => p.trim());
+            if (parts.length === 2) {
+              existingStyles[parts[0]] = parts[1];
+            }
+          });
+          const combinedStyles = { ...existingStyles, ...meta.styles };
+          element.setAttribute("style", this._styleObjectToString(combinedStyles));
+        }
+  
+        if (meta.content !== undefined) {
+          element.innerHTML = meta.content; // Replace innerHTML with original content
+        }
+  
+        return element; // Return the (potentially new) element
+      };
+  
+      const restoreNode = (node, currentHiarchyKey) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return null;
+        }
+  
+        // Check if this node is an "isWrapper" P or H3
+        if (
+          (node.tagName.toLowerCase() === "p" || node.tagName.toLowerCase() === "h3") &&
+          esesMapping[currentHiarchyKey] &&
+          esesMapping[currentHiarchyKey].isWrapper
+        ) {
+          const textNode = document.createTextNode(node.textContent);
+          if (node.parentNode) {
+            node.parentNode.replaceChild(textNode, node);
+          }
+          return textNode;
+        }
+  
+        // Apply ESES mapping data
+        const meta = esesMapping[currentHiarchyKey];
+        if (meta) {
+          node = applyMetaToElement(node, meta);
+        }
+  
+        // Recursively process children
+        const childrenToProcess = Array.from(node.childNodes); // Create a static list to avoid issues with DOM modifications
+        let childIdx = 0;
+        for (const child of childrenToProcess) {
+          const childHiarchyKey = this._generateHiarchyKey(currentHiarchyKey, childIdx);
+          const restoredChild = restoreNode(child, childHiarchyKey);
+          // If a child was removed (e.g., isWrapper), `restoredChild` will be a text node or null.
+          // The previous child was replaced, so `node.childNodes` is updated.
+          // We increment `childIdx` to correctly generate the next hierarchy key.
+          childIdx++;
+        }
+  
+        return node;
+      };
+  
+      // Helper to generate hiarchy keys during restoration (same as during conversion)
+      this._generateHiarchyKey = (parentKey, index) => {
+        if (parentKey === "") {
+          return `${index}`;
+        }
+        return `${parentKey}.${index}`;
+      };
+  
+      // Start restoration from the children of the input document (excluding the removed ESES meta p)
+      const processedNodes = [];
+      let childElementIdx = 0;
+      Array.from(doc.children).forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const hiarchyKey = this._generateHiarchyKey("", childElementIdx);
+          const restored = restoreNode(child, hiarchyKey);
+          if (restored) {
+            processedNodes.push(restored);
+          }
+          childElementIdx++;
+        }
+      });
+  
+      // Reconstruct the full HTML string
+      // Since we started with `doc.body` or `doc.documentElement` as the root from `HTMLtoDOM`,
+      // the restored nodes are now children of this implicit root.
+      // We need to return the combined outerHTML of these top-level elements.
+      // If the input was originally like `<body>...</body>`, we should aim to reconstruct that.
+      // For simplicity, let's just return the outerHTML of the processed nodes concatenated.
+      // A more precise implementation might create a `document` object and append to its `body`.
+      const resultDiv = document.createElement("div"); // A temporary container
+      processedNodes.forEach((n) => resultDiv.appendChild(n));
+      return resultDiv.innerHTML; // Return innerHTML to avoid the extra <div> wrapper
+    }
+  }
+  
+  // Test
+  window.addEventListener("DOMContentLoaded", (event) => {
+    const eses = new ESESApiExtender({});
+  
+    const html = `
+      <body>
+          <main style="border: 1px solid red;">
+              <h1>Header with <em>emphasis</em> and <span>span</span></h1>
+              <figure>
+                  <img src="image.jpg" alt="A lovely image">
+                  <figcaption style="font-style: italic;">Caption for image</figcaption>
+              </figure>
+              <p>A simple paragraph with <strong>bold</strong> and <i>italic</i> text.</p>
+              <video width="320" height="240" controls autoplay>
+                  <source src="video.mp4" type="video/mp4">
+                  Your browser does not support the video tag.
+              </video>
+              <br>
+              <hr>
+              <script>alert('hello');</script>
+              <input type="text" value="some text">
+          </main>
+          <aside style="background-color: lightgray; padding: 10px;">
+              <h6>Side Header</h6>
+              <p>Regular text</p>
+              <img src="sideimage.png">
+              <img src="sideimage2.png" alt="An image">
+              <div>
+                <p>Nested content</p>
+                <span>Another span</span>
+              </div>
+              <ul>
+                <li>Item 1</li>
+                <li>Item 2</li>
+              </ul>
+          </aside>
+          <p style="font-size: 16px;">Final paragraph outside main/aside.</p>
+      </body>
+      `;
+  
+    console.log("Original HTML:");
+    console.log(html);
+  
+    const lesser = eses.FullHtmlToLesserHtml(html);
+  
+    console.log("\nLesser HTML:");
+    console.log(lesser);
+  
+    const restored = eses.LesserHtmlToFullHtml(lesser);
+  
+    console.log("\nRestored HTML:");
+    console.log(restored);
+  
+    // For a robust comparison, we'd need to normalize HTML (e.g., remove extra whitespace, sort attributes)
+    // Simple string comparison will likely fail due to minor formatting differences.
+    // A DOM-based comparison function would be more accurate.
+    // For this exercise, let's manually inspect and log a success/failure message.
+  
+    // Let's create a temporary div to hold both and compare innerHTML for practical purposes.
+    const tempDivOriginal = document.createElement("div");
+    tempDivOriginal.innerHTML = html.replace(/\s+/g, " ").trim(); // Normalize whitespace
+  
+    const tempDivRestored = document.createElement("div");
+    tempDivRestored.innerHTML = restored.replace(/\s+/g, " ").trim(); // Normalize whitespace
+  
+    // This comparison is still imperfect as DOMParser might interpret things slightly differently
+    // or add `<html>`, `<body>` tags if input is a fragment, etc.
+    // The most accurate way is to re-parse both and compare DOM trees.
+    // For the given example, a simple comparison should show if major structures are missing.
+    if (tempDivOriginal.innerHTML === tempDivRestored.innerHTML) {
+      console.log("\nSuccess: Restored HTML (normalized) matches original (normalized).");
+    } else {
+      console.log("\nFailure: Restored HTML (normalized) does NOT match original (normalized).");
+      // Optionally, log diffs or specific problematic parts.
+    }
+  
+    // --- Additional tests for specific scenarios ---
+    console.log("\n--- Specific Scenario Tests ---");
+  
+    // Test: Empty P tag (should be removed from LesserHTML)
+    const emptyHtml = `<p></p>`;
+    const lesserEmpty = eses.FullHtmlToLesserHtml(emptyHtml);
+    console.log(`\nEmpty <p> tag -> Lesser HTML: "${lesserEmpty}"`); // Should be empty or only ESES meta if other elements exist
+  
+    // Test: Div with no styles (should get display:block)
+    const divNoStyleHtml = `<div>Hello World</div>`;
+    const lesserDivNoStyle = eses.FullHtmlToLesserHtml(divNoStyleHtml);
+    console.log(`\nDiv with no style -> Lesser HTML: "${lesserDivNoStyle}"`);
+  
+    // Test: Header with direct text and inner element
+    const headerWithMixedContent = `<h2>Header start <em>with emphasis</em> and end</h2>`;
+    const lesserMixedHeader = eses.FullHtmlToLesserHtml(headerWithMixedContent);
+    console.log(`\nMixed content header -> Lesser HTML: "${lesserMixedHeader}"`);
+    // Expected: <div><h3 isWrapper>Header start </h3><p>with emphasis</p><h3 isWrapper> and end</h3></div>
+  
+    const restoredMixedHeader = eses.LesserHtmlToFullHtml(lesserMixedHeader);
+    console.log(`\nMixed content header -> Restored HTML: "${restoredMixedHeader}"`);
+  
+    // Test: `ul` element (should become `div` with children `p` elements)
+    const ulHtml = `<ul><li>Item 1</li><li>Item 2</li></ul>`;
+    const lesserUl = eses.FullHtmlToLesserHtml(ulHtml);
+    console.log(`\nUL element -> Lesser HTML: "${lesserUl}"`);
+    const restoredUl = eses.LesserHtmlToFullHtml(lesserUl);
+    console.log(`\nUL element -> Restored HTML: "${restoredUl}"`);
+  });

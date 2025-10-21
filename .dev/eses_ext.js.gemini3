@@ -1,0 +1,765 @@
+/*
+ESES Extension
+
+  ESES Defines a way to encode arbitrary HTML into the restricted CMS-API format while maintaining readability for non ESES aware clients to the extent possible.
+
+  The extension builds on having a `<p style="display: none;">` tag containing ESES mapping data, this one maps element-hiarchy-keys to the elements extended data.
+  This is since the CMS API format only allows:
+    HTML Elements:
+      - p
+      - h3
+      - div
+      - img (with only property "src")
+    
+    p/h3 CSS Style Properties:
+      - font-size
+      - color
+      - display
+      - font-family
+      - font-weight
+      - font-style
+      - text-decoration
+      - text-transform
+
+    div CSS Style Properties:
+      - width
+      - height
+      - display
+      - background-color
+      - flex-flow
+      - align-items
+      - justify-content
+      - border
+      - border-radius
+      - margin
+      - margin-top
+      - margin-bottom
+      - margin-left
+      - margin-right
+      - padding
+      - padding-top
+      - padding-bottom
+      - padding-left
+      - padding-right
+      - background-image
+
+    And div is the only element who can have child elements, p and h3 must only have text content.
+
+  The goal of ESES is to map additional HTML element types, their properties (except img src), content for non text elements aswell as any CSS properties not supported by the CMS format.
+    This means if an element is of a type not supported we can represent it as a div, p or h3 then map that element's hiarchy key to the original element type and its properties.
+    Elements properties and css-properties that are supported by the CMS format should be kept inside the html however any non supported properties should be stored in the ESES mapping data.
+
+    The ESES mapping data must be html+ini safe text and is thus stored as base64 incoded JSON. With the prefix "ESES1:" (for v1 of the ESES extension)
+      since the mapping element has `display: none` we hint to other clients that this is not meant to be displayed.
+      
+      The JSON structure is: 
+        {
+            "<hiarchy-key>": {
+                "element": "<original-element-type>",
+                "attributes": {
+                    "<attribute-name>": "<attribute-value>",
+                    ...
+                },
+                "styles": {
+                    "<css-property-name>": "<css-property-value>",
+                    ...
+                },
+                "content": "<non-text-content>",
+                "isWrapper": <true|false>
+            },
+            ...
+        }
+
+      But fields `element`, `attributes`, `styles` and `content` are omitted if they are not relevant to that element. `isWrapper` is only present and true if the element was only added because its parent had to be converted to a div to hold children and this wraps the content, this element can thus be replaced with its own text-content.
+
+    HTML elements can be categorized into one of the following five categories:
+      1. Headers - h1, h2, h4, h5, h6 - Mapped to `h3`
+      2. Text - Al elements that are primarily text-based, ex semantics like `em` or formatters like `b` and `i`. - Mapped to `p`
+      3. Containers - Elements semantic or layouting that contain other elements, ex `main` or `span` - Mapped to `div`
+      4. Represented - Elements who are not supported but can have thier core properties represented as text for non ESES clients, ex `video` who can be represented as `[Video: <source>]` - Mapped to `p`
+      5. NotRepresented - Elements that have no relevant representation outside of ESES, ex `script`, self closing elements or non-content elements are also in this category like `br`, stored fully in ESES.
+
+    Since we want to maintain readability for non ESES clients we try to map elements to the first three categories when possible, otherwise we try to the "represented" category before falling back to "not represented".
+      Example `<b>bold text</b>` becomes `<p>bold text</p>` with mapping data saying that this hiarchy key is a `b` element.
+      And `<figure><img src="image.jpg"><figcaption>Caption</figcaption></figure>` becomes `<div><img src="image.jpg"><p>Caption</p></div>` with mapping data saying that the hiarchy key of the div is a `figure` element and the hiarchy key of the p is a `figcaption` element.
+      But some elements make more sense to be represented with their content, ex `<video><source src="video.mp4"></video>` becomes `<p>[Video: video.mp4]</p>` combining the <source> element into the representation.
+
+    But since the API only supports child elements under `div` elements any children under non-container elements will have thier parent converted into a div.
+      Example `<h2>Header <em>with emphasis</em></h2>` becomes `<div><h3>Header </h3><p>with emphasis</p></div>` with mapping data saying that the hiarchy key of the div is an `h2` element and the hiarchy key of the p is an `em` element and the hiarchy key of the h3 has "isWrapper" true meaning the h3 can be reduced to their text-content when back-converting.
+      Example `<h2>Header start <em> with emphasis</em> and end</h2>` becomes `<div><h3>Header start </h3><p> with emphasis</p><h3> and end</h3></div>` with mapping data saying that the hiarchy key of the div is an `h2` element, the hiarchy key of the p is an `em` element and both h3 hiarchy keys have "isWrapper" true meaning they can be reduced to their text-content when back-converting.
+
+    When back-converting we use the mapping data to restore the original elements, completely, recursing over and handling "isWrapper" elements by replacing them with their text-content, and restoring attributes, styles and content as needed, aswell as the element type ofcourse.
+
+    When converting we can use recursion and the bellow elementsMap, if an element type is under "header" and has no child elements we map it to `h3`, if its under "text" and has no child elements we map it to `p`, if its under "container" we map it to `div`,
+      if it has content and is udner "header" or "text" we handle with the "isWrapper" logic.
+    If its under emulated we use the provided function to get its text representation.
+    All other elements are mapped to NotRepresented.
+
+    !NOTE! LesserHTML does not allow empty elements, all elements without content will be in the NotRepresented category and only exist in the ESES mapping data.
+
+    !NOTE! LesserHTML does not support divs without any styling so for any divs that have no styling we add `style="display:block;"` to ensure they are valid LesserHTML.
+
+    Example LesserHTML with ESES data:
+    <div style="width:100%;height:650px;display:flex;background-color:#d6d6d6;flex-flow:column;justify-content:space-around;padding-bottom:25px;">
+        <p style="display: none;">ESES1:...base64-encode-of-json...</p>
+        <h3 style="font-size:36px;color:#005500;">Koalor – Allmänt</h3>
+        <p style="font-size:18px;color:#003300;">Koalor är små tåliga trädlevande djur från Australien.</p>
+        <img style="width:100%;height:250px;height:250;border-radius:10;border-radius:10;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg" alt="Image">
+        <div style="width:80%;height:300px;display:flex;background-color:#a3d9a5;flex-flow:row;">
+            <h3 style="font-size:28px;color:#006633;">Fakta om Koalor</h3>
+            <p style="font-size:16px;color:#666600;">De är kända för att äta eukalyptusblad.</p>
+            <p style="font-size:18px;color:#ff6600;">Koalor äter nästan uteslutande eukalyptusblad.</p>
+            <img style="width:80%;height:200px;height:200;border-radius:15;border-radius:15;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Koala_eating_eucalyptus_leaf.jpg" alt="Image">
+        </div>
+        <div style="width:80%;height:250px;display:flex;background-color:#ffe4b5;flex-flow:column;">
+            <h3 style="font-size:24px;color:green;">Roliga fakta</h3>
+            <p style="font-size:16px;color:#005500;">Koalor sover upp till 20 timmar per dag.</p>
+            <p style="font-size:14px;">Koalor har starka klor för att klättra i träd.</p>
+            <p style="">Koalor kommunicerar med olika ljud, från snarkningar till skrik.</p>
+            <p style="">test</p>
+            <img style="width:90%;height:180px;height:180;border-radius:20;border-radius:20;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/0/08/Koala_sleeping_in_tree.jpg" alt="Image">
+            <img style="width:70%;height:140px;height:140;border-radius:25;border-radius:25;display:block;" src="https://upload.wikimedia.org/wikipedia/commons/1/14/Koala_close_up.jpg" alt="Image">
+        </div>
+    </div>
+*/
+
+class ESESApiExtender {
+    constructor(api) {
+        this.api = api;
+        this.esesVersion = "1";
+        this.esesMetaMap = {};
+        this.hiarchyKeyCounter = 0;
+
+        this.allowedPCss = [
+            "font-size", "color", "display", "font-family", "font-weight",
+            "font-style", "text-decoration", "text-transform"
+        ];
+        this.allowedDivCss = [
+            "width", "height", "display", "background-color", "flex-flow",
+            "align-items", "justify-content", "border", "border-radius",
+            "margin", "margin-top", "margin-bottom", "margin-left",
+            "margin-right", "padding", "padding-top", "padding-bottom",
+            "padding-left", "padding-right", "background-image"
+        ];
+
+        this.elementsMap = {
+            "header": ["h1", "h2", "h4", "h5", "h6"],
+            "text": [
+                "p", "span", "em", "strong", "b", "i", "u", "small", "mark",
+                "sub", "sup"
+            ],
+            "container": [
+                "div", "main", "section", "article", "header", "footer",
+                "aside", "nav", "figure", "figcaption" // Add figure and figcaption here
+            ],
+            "emulated": [
+                ["video", (el) => {
+                    const sourceEl = el.querySelector("source");
+                    if (sourceEl && sourceEl.hasAttribute("src")) {
+                        return `[Video: ${sourceEl.getAttribute("src")}]`;
+                    }
+                    return "[Video]";
+                }],
+                ["audio", (el) => {
+                    const sourceEl = el.querySelector("source");
+                    if (sourceEl && sourceEl.hasAttribute("src")) {
+                        return `[Audio: ${sourceEl.getAttribute("src")}]`;
+                    }
+                    return "[Audio]";
+                }],
+                ["img", (el) => { // This is for img tags not fully supported (not in main body)
+                    if (el.hasAttribute("src")) {
+                        return `[Image: ${el.getAttribute("src")}]`;
+                    }
+                    return "[Image]";
+                }]
+            ]
+        };
+    }
+
+    // Helper to parse HTML string into a DOM element (like document.createElement)
+    HTMLtoDOM(htmlString) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlString, "text/html");
+        return doc.body;
+    }
+
+    // Helper to convert a DOM element back to an HTML string
+    DOMtoHTML(domElement) {
+        // Ensure that only the innerHTML of the body is returned for consistency
+        return domElement.innerHTML;
+    }
+
+    generateHiarchyKey(element) {
+        // A simple hierarchical key generator
+        // In a real application, this might be more robust
+        const key = `eses-key-${this.hiarchyKeyCounter++}`;
+        element.setAttribute("data-eses-key", key);
+        return key;
+    }
+
+    esesJsonToMetaString(jsonobj) {
+        const jsonstr = JSON.stringify(jsonobj);
+        const base64str = btoa(jsonstr);
+        return "ESES" + this.esesVersion + ":" + base64str;
+    }
+
+    metaStringToEsesJson(metastr) {
+        const esesPrefix = "ESES" + this.esesVersion + ":";
+        if (!metastr.startsWith(esesPrefix)) {
+            throw new Error("Invalid ESES meta string");
+        }
+
+        const base64str = metastr.slice(esesPrefix.length);
+        const jsonstr = atob(base64str);
+        return JSON.parse(jsonstr);
+    }
+
+    // Turns the full regular html5 into the restricted CMS-API html
+    FullHtmlToLesserHtml(fullHtml) {
+        this.esesMetaMap = {};
+        this.hiarchyKeyCounter = 0;
+        const body = this.HTMLtoDOM(fullHtml);
+        const lesserBody = document.createElement("body");
+
+        const processNode = (node, parentLesserElement) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                // If text node is direct child of a non-div, wrap it in a p
+                if (
+                    parentLesserElement.tagName.toLowerCase() !== "div" &&
+                    node.textContent.trim() !== ""
+                ) {
+                    const p = document.createElement("p");
+                    p.textContent = node.textContent;
+                    parentLesserElement.appendChild(p);
+                } else if (parentLesserElement.tagName.toLowerCase() === "div") {
+                    // For text directly in a div, wrap it in a p
+                    if (node.textContent.trim() !== "") {
+                        const p = document.createElement("p");
+                        p.textContent = node.textContent;
+                        parentLesserElement.appendChild(p);
+                    }
+                } else if (node.textContent.trim() !== "") {
+                    // For other valid text nodes
+                    parentLesserElement.appendChild(node.cloneNode(true));
+                }
+                return;
+            }
+
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                return;
+            }
+
+            const tagName = node.tagName.toLowerCase();
+            const originalAttributes = {};
+            const originalStyles = {};
+
+            // Store all attributes and styles not allowed in CMS-API
+            Array.from(node.attributes).forEach((attr) => {
+                originalAttributes[attr.name] = attr.value;
+            });
+
+            const cssText = node.style.cssText;
+            const styleDeclaration = node.ownerDocument.createElement("span").style;
+            styleDeclaration.cssText = cssText;
+
+            Array.from(styleDeclaration).forEach((prop) => {
+                originalStyles[prop] = styleDeclaration.getPropertyValue(prop);
+            });
+
+            let esesEntry = {
+                element: tagName
+            };
+
+            let lesserElement = null;
+            let currentHasChildren = node.children.length > 0;
+            let nodeIsEmpty = node.textContent.trim() === "" && node.children.length === 0;
+
+            // Handle img tags allowed by CMS-API separately
+            if (tagName === "img" && node.hasAttribute("src")) {
+                lesserElement = document.createElement("img");
+                lesserElement.setAttribute("src", node.getAttribute("src"));
+                // Keep allowed styles
+                const imgStyles = Array.from(styleDeclaration).filter(
+                    (prop) => this.allowedDivCss.includes(prop)
+                );
+                if (imgStyles.length > 0) {
+                    const styleAttr = imgStyles.map(
+                        (prop) => `${prop}:${styleDeclaration.getPropertyValue(prop)}`
+                    ).join(";");
+                    lesserElement.setAttribute("style", styleAttr);
+                }
+                // Only keep 'alt' attribute if present
+                if (node.hasAttribute("alt")) {
+                    lesserElement.setAttribute("alt", node.getAttribute("alt"));
+                }
+                parentLesserElement.appendChild(lesserElement);
+                // Remove stored attributes and styles that were kept
+                delete originalAttributes.src;
+                delete originalAttributes.alt;
+                imgStyles.forEach((prop) => delete originalStyles[prop]);
+            } else if (this.elementsMap.header.includes(tagName)) {
+                if (nodeIsEmpty) {
+                    // Empty header goes to NotRepresented
+                    lesserElement = null;
+                } else if (currentHasChildren) {
+                    lesserElement = document.createElement("div");
+                    const wrapperH3 = document.createElement("h3");
+                    wrapperH3.textContent = Array.from(node.childNodes)
+                        .filter((n) => n.nodeType === Node.TEXT_NODE)
+                        .map((n) => n.textContent)
+                        .join("");
+                    if (wrapperH3.textContent.trim() !== "") {
+                        this.generateHiarchyKey(wrapperH3);
+                        this.esesMetaMap[wrapperH3.getAttribute("data-eses-key")] = {
+                            isWrapper: true
+                        };
+                        lesserElement.appendChild(wrapperH3);
+                    }
+                } else {
+                    lesserElement = document.createElement("h3");
+                    lesserElement.textContent = node.textContent;
+                }
+            } else if (this.elementsMap.text.includes(tagName)) {
+                if (nodeIsEmpty) {
+                    // Empty text element goes to NotRepresented
+                    lesserElement = null;
+                } else if (currentHasChildren) {
+                    lesserElement = document.createElement("div");
+                    const wrapperP = document.createElement("p");
+                    wrapperP.textContent = Array.from(node.childNodes)
+                        .filter((n) => n.nodeType === Node.TEXT_NODE)
+                        .map((n) => n.textContent)
+                        .join("");
+                    if (wrapperP.textContent.trim() !== "") {
+                        this.generateHiarchyKey(wrapperP);
+                        this.esesMetaMap[wrapperP.getAttribute("data-eses-key")] = {
+                            isWrapper: true
+                        };
+                        lesserElement.appendChild(wrapperP);
+                    }
+                } else {
+                    lesserElement = document.createElement("p");
+                    lesserElement.textContent = node.textContent;
+                }
+            } else if (this.elementsMap.container.includes(tagName)) {
+                if (nodeIsEmpty) {
+                    // Empty container goes to NotRepresented
+                    lesserElement = null;
+                } else {
+                    lesserElement = document.createElement("div");
+                    // Add default display:block to empty divs without styles
+                    if (
+                        Object.keys(originalStyles).length === 0 &&
+                        !node.hasAttribute("style")
+                    ) {
+                        lesserElement.style.display = "block";
+                    }
+                }
+            } else {
+                let emulatedFound = false;
+                for (const [emulatedTag, emulatorFn] of this.elementsMap.emulated) {
+                    if (tagName === emulatedTag) {
+                        lesserElement = document.createElement("p");
+                        lesserElement.textContent = emulatorFn(node);
+                        emulatedFound = true;
+                        esesEntry.content = node.innerHTML; // Store original content
+                        break;
+                    }
+                }
+                if (!emulatedFound) {
+                    // NotRepresented
+                    if (nodeIsEmpty) {
+                        lesserElement = null;
+                        if (tagName === "br" || node.children.length === 0 && node.textContent.trim() === "") {
+                            // Self-closing and empty tags fully in ESES
+                            esesEntry.content = null;
+                        } else {
+                            esesEntry.content = node.innerHTML;
+                        }
+                    } else {
+                        // Fallback to div for non-represented elements with children/content
+                        lesserElement = document.createElement("div");
+                        // Add default display:block to empty divs without styles
+                        if (
+                            Object.keys(originalStyles).length === 0 &&
+                            !node.hasAttribute("style")
+                        ) {
+                            lesserElement.style.display = "block";
+                        }
+                        if (node.textContent.trim() !== "") {
+                            const p = document.createElement("p");
+                            p.textContent = node.textContent;
+                            lesserElement.appendChild(p);
+                            esesEntry.content = Array.from(node.childNodes)
+                                .filter((n) => n.nodeType !== Node.TEXT_NODE)
+                                .map((n) => this.DOMtoHTML(n))
+                                .join("");
+                        } else {
+                            esesEntry.content = node.innerHTML;
+                        }
+                    }
+                }
+            }
+
+            if (lesserElement) {
+                const key = this.generateHiarchyKey(lesserElement);
+                this.esesMetaMap[key] = esesEntry;
+
+                // Apply supported attributes and styles
+                if (tagName === "img") {
+                    // already handled img src
+                } else {
+                    const supportedAttributes = {};
+                    const supportedStyles = {};
+                    const allowedCss = lesserElement.tagName.toLowerCase() === "div" ?
+                        this.allowedDivCss :
+                        this.allowedPCss;
+
+                    Array.from(node.attributes).forEach((attr) => {
+                        if (attr.name === "style") {
+                            const styleDeclaration = node.ownerDocument
+                                .createElement("span")
+                                .style;
+                            styleDeclaration.cssText = attr.value;
+                            Array.from(styleDeclaration).forEach((prop) => {
+                                if (allowedCss.includes(prop)) {
+                                    supportedStyles[prop] =
+                                        styleDeclaration.getPropertyValue(prop);
+                                    delete originalStyles[prop]; // Remove from originalStyles
+                                }
+                            });
+                        } else if (
+                            (lesserElement.tagName.toLowerCase() === "img" &&
+                                attr.name === "src") ||
+                            attr.name === "alt" // Also for img, only alt is kept
+                        ) {
+                            supportedAttributes[attr.name] = attr.value;
+                        } else {
+                            // No other attributes are supported by CMS API on p/h3/div
+                            // These will stay in originalAttributes for ESES mapping
+                        }
+                    });
+
+                    // Set styles for the lesser element
+                    const styleText = Object.keys(supportedStyles)
+                        .map((prop) => `${prop}:${supportedStyles[prop]}`)
+                        .join(";");
+                    if (styleText) {
+                        lesserElement.setAttribute("style", styleText);
+                    }
+
+                    // Set attributes for the lesser element (only src for img, if it's the target)
+                    Object.keys(supportedAttributes).forEach((attrName) => {
+                        if (attrName !== "style") {
+                            // Don't re-add style as an attribute
+                            lesserElement.setAttribute(
+                                attrName,
+                                supportedAttributes[attrName]
+                            );
+                        }
+                    });
+                }
+
+                // If any original attributes or styles remain, add them to esesEntry
+                if (Object.keys(originalAttributes).length > 0) {
+                    esesEntry.attributes = originalAttributes;
+                }
+                if (Object.keys(originalStyles).length > 0) {
+                    esesEntry.styles = originalStyles;
+                }
+
+                parentLesserElement.appendChild(lesserElement);
+
+                // Recursively process children
+                Array.from(node.childNodes).forEach((child) => {
+                    let targetParent = lesserElement;
+
+                    // If lesserElement is not a div and has children, promote it to div
+                    // This handles the "isWrapper" scenario for Headers and Text
+                    const isDivAllowedParent = lesserElement.tagName.toLowerCase() ===
+                        "div";
+                    const hasNonTextChildren = Array.from(node.children).some(
+                        (c) => c.nodeType === Node.ELEMENT_NODE
+                    );
+                    const originalParentIsTextOrHeader = this.elementsMap.header.includes(
+                        tagName
+                    ) || this.elementsMap.text.includes(tagName);
+
+                    if (
+                        originalParentIsTextOrHeader &&
+                        hasNonTextChildren &&
+                        !isDivAllowedParent
+                    ) {
+                        const originalLesserElement = lesserElement;
+                        lesserElement = document.createElement("div");
+                        // Replace the original element in the parent with the new div
+                        parentLesserElement.replaceChild(lesserElement, originalLesserElement);
+                        lesserElement.appendChild(originalLesserElement);
+                        // Update ESES entry for the newly created div
+                        const newKey = this.generateHiarchyKey(lesserElement);
+                        const oldKey = originalLesserElement.getAttribute("data-eses-key");
+                        this.esesMetaMap[newKey] = {
+                            element: tagName
+                        }; // New div represents the original element
+                        this.esesMetaMap[oldKey].isWrapper = true; // Mark original as wrapper
+
+                        // Add default display:block if no other styles
+                        if (Object.keys(originalStyles).length === 0 && !node.hasAttribute("style")) {
+                            lesserElement.style.display = "block";
+                        }
+
+                        targetParent = lesserElement;
+                    }
+                    processNode(child, targetParent);
+                });
+            } else {
+                // NotRepresented and empty, only exists in ESES mapping data.
+                // Store the full original element HTML if no lesser element was created.
+                if (Object.keys(esesEntry).length > 0) { // Check if esesEntry has anything worth storing
+                    const key = `eses-key-${this.hiarchyKeyCounter++}`;
+                    this.esesMetaMap[key] = { ...esesEntry
+                    };
+                    if (Object.keys(originalAttributes).length > 0) {
+                        this.esesMetaMap[key].attributes = originalAttributes;
+                    }
+                    if (Object.keys(originalStyles).length > 0) {
+                        this.esesMetaMap[key].styles = originalStyles;
+                    }
+                    if (node.children.length === 0 && node.textContent.trim() === "") {
+                        this.esesMetaMap[key].content = null;
+                    } else if (!this.esesMetaMap[key].content) {
+                        this.esesMetaMap[key].content = node.innerHTML;
+                    }
+                }
+            }
+        };
+
+        Array.from(body.childNodes).forEach((child) =>
+            processNode(child, lesserBody)
+        );
+
+        // Add ESES meta data
+        if (Object.keys(this.esesMetaMap).length > 0) {
+            const metaP = document.createElement("p");
+            metaP.style.display = "none";
+            metaP.textContent = this.esesJsonToMetaString(this.esesMetaMap);
+            lesserBody.prepend(metaP);
+        }
+
+        return this.DOMtoHTML(lesserBody);
+    }
+
+    // Turns the restricted CMS-API html into the full regular html5
+    LesserHtmlToFullHtml(lesserHtml) {
+        const body = this.HTMLtoDOM(lesserHtml);
+        const fullBody = document.createElement("body");
+        this.esesMetaMap = {}; // Reset for parsing
+
+        // Find and parse ESES meta data
+        const metaP = body.querySelector('p[style*="display: none"][data-eses-key^="eses-key-"]');
+        if (metaP && metaP.textContent.startsWith("ESES" + this.esesVersion + ":")) {
+            try {
+                this.esesMetaMap = this.metaStringToEsesJson(metaP.textContent);
+                metaP.remove(); // Remove the meta p tag from the DOM
+            } catch (e) {
+                console.error("Error parsing ESES meta string:", e);
+                this.esesMetaMap = {};
+            }
+        } else {
+            // Also check if the meta p is a direct child of the body without data-eses-key
+            const firstP = body.querySelector("p");
+            if (firstP && firstP.style.display === "none" && firstP.textContent.startsWith("ESES" + this.esesVersion + ":")) {
+                try {
+                    this.esesMetaMap = this.metaStringToEsesJson(firstP.textContent);
+                    firstP.remove(); // Remove the meta p tag from the DOM
+                } catch (e) {
+                    console.error("Error parsing ESES meta string from first p:", e);
+                    this.esesMetaMap = {};
+                }
+            }
+        }
+
+        const restoreNode = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.cloneNode(true);
+            }
+
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                return null;
+            }
+
+            const key = node.getAttribute("data-eses-key");
+            const esesData = key && this.esesMetaMap[key] ? this.esesMetaMap[key] : {};
+            let originalTagName = esesData.element || node.tagName.toLowerCase();
+            const isWrapper = esesData.isWrapper || false;
+
+            if (isWrapper) {
+                const tempDiv = document.createElement("div"); // Temporary div to hold children
+                Array.from(node.childNodes).forEach((child) => {
+                    const restoredChild = restoreNode(child);
+                    if (restoredChild) {
+                        tempDiv.appendChild(restoredChild);
+                    }
+                });
+                return tempDiv.textContent ?
+                    document.createTextNode(tempDiv.textContent) :
+                    null;
+            }
+
+            let restoredElement = document.createElement(originalTagName);
+
+            // Restore attributes
+            if (esesData.attributes) {
+                for (const attrName in esesData.attributes) {
+                    restoredElement.setAttribute(attrName, esesData.attributes[attrName]);
+                }
+            }
+            // Restore styles
+            if (esesData.styles) {
+                for (const styleProp in esesData.styles) {
+                    restoredElement.style[styleProp] = esesData.styles[styleProp];
+                }
+            }
+
+            // Restore CMS-API allowed attributes and styles
+            Array.from(node.attributes).forEach((attr) => {
+                if (attr.name !== "data-eses-key" && attr.name !== "style") {
+                    restoredElement.setAttribute(attr.name, attr.value);
+                } else if (attr.name === "style") {
+                    const styleDeclaration = node.ownerDocument
+                        .createElement("span")
+                        .style;
+                    styleDeclaration.cssText = attr.value;
+                    Array.from(styleDeclaration).forEach((prop) => {
+                        restoredElement.style[prop] = styleDeclaration.getPropertyValue(prop);
+                    });
+                }
+            });
+
+            // Restore content for emulated elements
+            if (esesData.content !== undefined && esesData.content !== null) {
+                restoredElement.innerHTML = esesData.content;
+            } else {
+                // Recursively restore children for non-emulated elements
+                Array.from(node.childNodes).forEach((child) => {
+                    const restoredChild = restoreNode(child);
+                    if (restoredChild) {
+                        restoredElement.appendChild(restoredChild);
+                    }
+                });
+            }
+
+            return restoredElement;
+        };
+
+        Array.from(body.childNodes).forEach((child) => {
+            const restoredChild = restoreNode(child);
+            if (restoredChild) {
+                fullBody.appendChild(restoredChild);
+            }
+        });
+
+        // Add back NotRepresented elements that didn't have a lesser counterpart
+        for (const key in this.esesMetaMap) {
+            const esesData = this.esesMetaMap[key];
+            if (esesData.element && !body.querySelector(`[data-eses-key="${key}"]`)) {
+                // Only add if it wasn't already restored through a lesser element
+                const originalTagName = esesData.element;
+                let restoredElement = document.createElement(originalTagName);
+
+                if (esesData.attributes) {
+                    for (const attrName in esesData.attributes) {
+                        restoredElement.setAttribute(attrName, esesData.attributes[attrName]);
+                    }
+                }
+                if (esesData.styles) {
+                    for (const styleProp in esesData.styles) {
+                        restoredElement.style[styleProp] = esesData.styles[styleProp];
+                    }
+                }
+                if (esesData.content !== undefined && esesData.content !== null) {
+                    restoredElement.innerHTML = esesData.content;
+                }
+                fullBody.appendChild(restoredElement);
+            }
+        }
+
+        return this.DOMtoHTML(fullBody);
+    }
+}
+
+// Test
+window.addEventListener("DOMContentLoaded", (event) => {
+    const eses = new ESESApiExtender({});
+
+    const html = `
+    <body>
+        <main style="background-color: lightgray;">
+            <h1>Main Title</h1>
+            <h2>Header start <em> with emphasis</em> and end</h2>
+            <figure style="border: 1px solid blue;">
+                <img src="image.jpg" alt="A beautiful image">
+                <figcaption style="font-style: italic;">Caption text</figcaption>
+            </figure>
+            <video controls>
+                <source src="video.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <p>A simple paragraph with <b>bold</b> and <i>italic</i> text.</p>
+            <script>console.log('hello');</script>
+            <br>
+            <span>A span element</span>
+            <div custom-attr="value">Custom div content</div>
+        </main>
+        <aside>
+            <h6>Side Header</h6>
+            <p>Regular text</p>
+            <img src="sideimage.png">
+            <img src="sideimage2.png" alt="An image">
+        </aside>
+        <footer style="color: grey;">
+            &copy; 2025
+        </footer>
+    </body>
+    `;
+
+    console.log("Original HTML:");
+    console.log(html);
+
+    const lesser = eses.FullHtmlToLesserHtml(html);
+
+    console.log("\nLesser HTML:");
+    console.log(lesser);
+
+    const restored = eses.LesserHtmlToFullHtml(lesser);
+
+    console.log("\nRestored HTML:");
+    console.log(restored);
+
+    // Normalize HTML strings for comparison (remove extra whitespace, etc.)
+    const normalizeHtml = (htmlString) =>
+        htmlString
+        .replace(/\s+/g, " ")
+        .replace(/>\s+</g, "><")
+        .trim();
+
+    const normalizedOriginal = normalizeHtml(html);
+    const normalizedRestored = normalizeHtml(restored);
+
+    if (normalizedOriginal === normalizedRestored) {
+        console.log("\nSuccess: Restored HTML matches original");
+    } else {
+        console.log("\nFailure: Restored HTML does not match original");
+        console.log("\nDifference:");
+        // A simple diff
+        const originalLines = normalizedOriginal.split(">");
+        const restoredLines = normalizedRestored.split(">");
+        originalLines.forEach((line, index) => {
+            if (line !== restoredLines[index]) {
+                console.log(`Original: ${line}>`);
+                console.log(`Restored: ${restoredLines[index]}>`);
+            }
+        });
+    }
+});

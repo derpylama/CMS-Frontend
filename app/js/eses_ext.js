@@ -144,12 +144,49 @@ class ESESApiExtender {
             ]
             // All other elements are fallbacked to NotRepresented
         }
+
+        this.allowedElements = ["p", "h3", "div", "img"];
+
+        this.allowedTextStyles = [
+            "font-size",
+            "color",
+            "display",
+            "font-family",
+            "font-weight",
+            "font-style",
+            "text-decoration",
+            "text-transform"
+        ];
+
+        this.allowedDivStyles = [
+            "width",
+            "height",
+            "display",
+            "background-color",
+            "flex-flow",
+            "align-items",
+            "justify-content",
+            "border",
+            "border-radius",
+            "margin",
+            "margin-top",
+            "margin-bottom",
+            "margin-left",
+            "margin-right",
+            "padding",
+            "padding-top",
+            "padding-bottom",
+            "padding-left",
+            "padding-right",
+            "background-image"
+        ];
     }
 
     esesJsonToMetaString(jsonobj) {
         // Takes jsonobj => jsonstr => base64str => "ESES{v}:" + base64str
         const jsonstr = JSON.stringify(jsonobj);
-        const base64str = btoa(jsonstr);
+        //const base64str = btoa(jsonstr);
+        const base64str = jsonstr;
         return "ESES" + this.esesVersion + ":" + base64str;
     }
 
@@ -162,7 +199,8 @@ class ESESApiExtender {
 
         const base64str = metastr.slice(esesPrefix.length);
 
-        const jsonstr = atob(base64str);
+        //const jsonstr = atob(base64str);
+        const jsonstr = base64str;
 
         return JSON.parse(jsonstr);
     }
@@ -170,6 +208,67 @@ class ESESApiExtender {
     // Turns the full regular html5 into the restricted CMS-API html
     FullHtmlToLesserHtml(lesserhtml) {
         // We don't ever want to use the DOM or `document` variable instead use `const doc = HTMLtoDOM(lesserhtml);` which does not have all methods of `document`
+
+        const mappingData = {};
+        const lesserHtml = HTMLtoDOM("<div></div>"); // Has methods: 'children', 'firstElementChild', 'lastElementChild', 'childElementCount', 'append', 'getElementById', 'moveBefore', 'prepend', 'querySelector', 'querySelectorAll', 'replaceChildren', 'constructor'
+
+        const doc = HTMLtoDOM(lesserhtml); // Has methods: 'children', 'firstElementChild', 'lastElementChild', 'childElementCount', 'append', 'getElementById', 'moveBefore', 'prepend', 'querySelector', 'querySelectorAll', 'replaceChildren', 'constructor'
+
+        // Recursive function to process an element and its children
+        function processElem(hiarchyKey, element, lesserParent) {
+            const tagName = element.tagName.toLowerCase();
+            const hasChildren = element.children && element.children.length > 0;
+            let lesserElem = null;
+            const mappingEntry = {};
+
+            // Handle stuff
+            //// Does it have children if so we need to convert to div
+            if (hasChildren) {
+                // Convert to div
+                mappingEntry["element"] = tagName;
+                lesserElem = lesserHtml.ownerDocument.createElement("div");
+                // Ensure valid lesserhtml div
+                if (!element.hasAttribute("style") || element.getAttribute("style").trim() === "") {
+                    lesserElem.setAttribute("style", "display:block;");
+                } else {
+                    lesserElem.setAttribute("style", element.getAttribute("style"));
+                }
+                mappingEntry["isWrapper"] = true;
+            }
+
+            // Handle children
+            if (hasChildren) {
+                for (let i = 0; i < element.children.length; i++) {
+                    const childElem = element.children[i];
+                    processElem(hiarchyKey + "." + i, childElem, lesserElem);
+                }
+            }
+
+            // Add the element to the mapping data
+            if (Object.keys(mappingEntry).length > 0) {
+                mappingData[hiarchyKey] = mappingEntry;
+            }
+
+            // Add the element to the lesserHtml
+            if (lesserElem === null) {
+                lesserElem = element;
+            }
+            lesserParent.append(lesserElem);
+        }
+
+        // Iterate top level elements
+        for (let i = 0; i < doc.children.length; i++) {
+            const elem = doc.children[i];
+
+            processElem("" + i, elem, lesserHtml.firstElementChild);
+        }
+
+        // Append the mapping data as a hidden p element to the lesserHtml
+        const mappingMetaStr = this.esesJsonToMetaString(mappingData);
+        const mappingElem = HTMLtoDOM(`<p style="display: none;">${mappingMetaStr}</p>`);
+        lesserHtml.firstElementChild.prepend(mappingElem);
+
+        console.log(lesserHtml.textContent);
     }
 
     // Turns the restricted CMS-API html into the full regular html5
@@ -183,6 +282,8 @@ window.addEventListener('DOMContentLoaded', (event) => {
     const eses = new ESESApiExtender({});
 
     const html = `
+    <DOCTYPE html>
+    <html>
     <body>
         <main>
             <h2>Header start <em> with emphasis</em> and end</h2>
@@ -201,14 +302,15 @@ window.addEventListener('DOMContentLoaded', (event) => {
             <img src="sideimage2.png" alt="An image">
         </aside>
     </body>
+    </html>
     `;
 
-    const lesser = eses.ToFullHtml(html);
+    const lesser = eses.FullHtmlToLesserHtml(html);
 
     console.log("Lesser HTML:");
     console.log(lesser);
 
-    const restored = eses.FromFullHtml(lesser);
+    const restored = eses.LesserHtmlToFullHtml(lesser);
 
     console.log("Restored HTML:");
     console.log(restored);
