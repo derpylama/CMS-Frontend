@@ -18,6 +18,8 @@ window.addEventListener("DOMContentLoaded", async (e) => {
     if (preferedTheme === "system") {
         // Use system theme
         document.documentElement.setAttribute("data-theme", window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light");
+    } else {
+        document.documentElement.setAttribute("data-theme", preferedTheme);
     }
 
     // When system theme changes and preferedTheme is system update theme

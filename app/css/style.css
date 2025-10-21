@@ -62,11 +62,24 @@ header {
     border-bottom: solid var(--standard-border-width) var(--divider-color);
     width: 100%;
     height: 4rem;
-    background-color: var(--medium-backdrop-color);
+    background-color: var(--light-backdrop-color);
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+
+
+    padding: 0 var(--page-padding);
+    box-sizing: border-box;
+
+    /*box-shadow: 0 2px 6px var(--medium-backdrop-color);*/
 }
+
+#page-pages, #page-editor {
+    padding-left: var(--page-padding);
+    padding-right: var(--page-padding);
+    box-sizing: border-box;
+}
+
 
 /* In pages stick the topbar */
 [data-page="pages"] {
@@ -118,28 +131,27 @@ button {
 }
 
 iframe {
-
-    background-color: brown;
+    background-color: white;
 }
 
 textarea {
 
-    background-color: rgba(0, 0, 0, 0);
+
+    background-color: var(--standard-background);
+    color: var(--standard-font-color);
 }
 textarea, iframe {
     display: block;
     width: 100%;
-    max-width: 40rem;
+
     height: 40rem;
 }
 
 /* === Specific Classes === */
 .page-create-edit-container {
     gap: var(--page-gap-width);
-    padding: 0 var(--page-gap-width);
-    margin: 0 var(--standard-gap-width);
-    border: solid var(--standard-border-width);
-    border-radius: var(--medium-border-radius);
+
+
 }
 
 .equal-width-flexbox {
@@ -161,9 +173,6 @@ textarea, iframe {
     display: flex;
     flex-direction: row;
 }
-
-
-
 .checkbox-button:has(input[id="nav-toggle-lang"]) > div {
     flex: 1;
     display: flex;
@@ -206,29 +215,30 @@ textarea, iframe {
 
 .text-container {
     border-radius: var(--medium-border-radius);
-    background-color: brown;
     display: block;
-    border: solid var(--standard-border-width);
-    
+    border: solid var(--standard-border-width) var(--button-border-color);
     width: 100%;
     box-sizing: border-box;
+    overflow: hidden;
+}
+
+.text-container > * {
+    border-radius: var(--medium-border-radius);
 }
 
 #editor-html {
     padding: var(--standard-gap-width);
 }
 
-#editor-preview {
-    border-radius: var(--medium-border-radius);
-}
+
 
 .preview {
     background-color: var(--preview-card-background);
     width: 15rem;
     height: 10rem;
-
     padding: .8rem;
     border-radius: var(--medium-border-radius);
+    border: solid var(--standard-border-width) var(--button-border-color);
     margin: var(--page-gap-width);
 
     cursor: pointer;
@@ -298,9 +308,15 @@ textarea, iframe {
     padding: var(--topbar-ypadding) 1rem;
     margin: var(--topbar-ymargin);
     border-radius: var(--topbar-border-radius);
+
+
+
+    background-color: var(--button-color);
     color: var(--standard-font-color);
-    background-color: var(--secondary-background);
+    border: solid var(--standard-border-width) var(--button-border-color);
 }
+
+
 
 label:has(#nav-toggle-lang) {
     margin: var(--topbar-ymargin);
@@ -330,12 +346,10 @@ label:has(#nav-toggle-lang) > *:not(:last-child) {
 
 #page-editor {
     margin-top: var(--standard-gap-width);
+    box-sizing: border-box;
 }
 
-#page-editor > * {
-    margin-left: 1rem;
-    margin-bottom: var(--standard-gap-width);
-}
+
 
 #page-editor > *:last-child {
     gap: var(--standard-gap-width);
@@ -347,21 +361,92 @@ label:has(#nav-toggle-lang) > *:not(:last-child) {
     border-radius: var(--light-border-radius);
 }
 
-#page-editor > *:first-child label {
-    margin-right: 1rem;
-}
 
-#page-editor > *:first-child select {
-    border-radius: var(--light-border-radius);
-}
 
-#page-editor > *:first-child > * {
-    width: fit-content;
-    margin-bottom: 1rem;
-}
+
+
+
 
 #content-container,
 #content-container > *:first-child {
     height: auto;
     min-height: calc(100vh - 4rem);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.page-section-padding {
+    padding: var(--page-gap-width) 0;
+}
+.page-section-border {
+    border: solid;
+    border-color: var(--divider-color);
+    border-width: var(--standard-border-width) 0;
+}
+
+
+
+.editor-button {
+    background-color: var(--button-color);
+    color: var(--standard-font-color);
+    border: solid var(--standard-border-width) var(--button-border-color);
+
+
+
+    padding: var(--small-button-padding) var(--medium-button-padding);
+    border-radius: var(--light-border-radius);
+}
+
+
+
+.editor-button-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.item-gap {
+    gap: var(--standard-gap-width);
+}
+
+.center-vertical {
+
+    align-items: center;
+}
+
+
+
+#editor-input-header {
+    color: var(--standard-font-color);
+    
+
+    padding: var(--small-button-padding);
+    
+    border: solid var(--standard-border-width);
+    border-radius: var(--light-border-radius);
+    background-color: var(--standard-background);
+    display: inline-block;
+    margin-left: var(--small-button-padding);
+}
+#editor-input-header:focus {
+    outline-color: blue;
+}
+
+button.editor-button:hover, .topbar-button:hover {
+    background-color: var(--button-hover);
+}
+
