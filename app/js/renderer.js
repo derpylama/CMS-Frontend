@@ -302,6 +302,8 @@ window.addEventListener("DOMContentLoaded", async (e) => {
         editorPreview.srcdoc = html;
     }
 
+
+    
     //MARK: Validator 
 
     function getLineAndColumnFromIndex(text, index) {
