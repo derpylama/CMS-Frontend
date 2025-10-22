@@ -339,6 +339,8 @@ class WonkyCMSApiWrapper {
             if (img.borderRadius) parts.push(`addImageBorderRadius${brackets}=${encode(img.borderRadius)}`);
         }
 
+        console.log(parts);
+
         return `${parts.join("&")}`;
     }
 

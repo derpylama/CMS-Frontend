@@ -63,7 +63,8 @@ window.addEventListener("DOMContentLoaded", async (e) => {
         }
         window.IPC.setWindowTitle(titleElement.innerText + " - " + usedHeader);
 
-        var html = frapi.JsonToHtml(data, lang);
+        const html = frapi.JsonToHtml(data, lang);
+
         contentCon.innerHTML = html;
         editor.setValue(html);
         editorInputHeader.value = data.header;
@@ -120,8 +121,9 @@ window.addEventListener("DOMContentLoaded", async (e) => {
                 if (response === 0) {
                     // MARK: Save changes
                     // update document.documentElement.dataset.openpage with new page id
-                    var newPageId = await frapi.ReplacePageUsingHtml(document.documentElement.dataset.openpage, editorHtml.value, ((editorInputHeader.value === null || editorInputHeader.value.trim() === "") ? null : editorInputHeader.value.trim()), navToggleLang.checked ? "sv" : "en");
-                    console.log(frapi.HtmlToJson(editorHtml.value, editorInputHeader.value))
+                    var newPageId = await frapi.ReplacePageUsingHtml(document.documentElement.dataset.openpage, editor.getValue(), ((editorInputHeader.value === null || editorInputHeader.value.trim() === "") ? null : editorInputHeader.value.trim()), navToggleLang.checked ? "sv" : "en");
+                    console.log(frapi.HtmlToJson(editor.getValue(), editorInputHeader.value))
+                    console.log(editorHtml.value)
                     
                     document.documentElement.dataset.openpage = newPageId;
                     // Switch language
@@ -246,8 +248,10 @@ window.addEventListener("DOMContentLoaded", async (e) => {
 
             // MARK: Save changes
             // update document.documentElement.dataset.openpage with new page id
-            var newPageId = await frapi.ReplacePageUsingHtml(document.documentElement.dataset.openpage, editorHtml.value, ((editorInputHeader.value === null || editorInputHeader.value.trim() === "") ? null : editorInputHeader.value.trim()), navToggleLang.checked ? "sv" : "en");
-            console.log(frapi.HtmlToJson(editorHtml.value, editorInputHeader.value))
+            var newPageId = await frapi.ReplacePageUsingHtml(document.documentElement.dataset.openpage, editor.getValue(), ((editorInputHeader.value === null || editorInputHeader.value.trim() === "") ? null : editorInputHeader.value.trim()), navToggleLang.checked ? "sv" : "en");
+            console.log(frapi.HtmlToJson(editor.getValue(), editorInputHeader.value))
+            console.log(editorHtml.value)
+            console.log(editor.getValue())
                     
             document.documentElement.dataset.openpage = newPageId;
             // Return to pages
